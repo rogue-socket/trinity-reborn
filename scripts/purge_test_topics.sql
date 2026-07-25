@@ -1,0 +1,28 @@
+-- Delete topics created by automated tests / probes.
+-- Review the SELECT first. Ask before running against a shared database.
+
+-- Preview:
+-- SELECT topic_key, display_name, created_at
+-- FROM topics
+-- WHERE topic_key LIKE 'ingestion-topic-%'
+--    OR topic_key LIKE 'list-topic-%'
+--    OR topic_key LIKE 'page-topic-%'
+--    OR topic_key LIKE 'lifecycle-topic-%'
+--    OR topic_key LIKE 'example-topic-%'
+--    OR topic_key LIKE 'layer1-handoff-%'
+--    OR topic_key LIKE 'generated-facts-%'
+--    OR topic_key LIKE 'context-topic-%'
+--    OR topic_key LIKE 'uk-general-election-2024-%'
+--    OR topic_key LIKE 'india-student-protests-2026-%'
+-- ORDER BY created_at DESC;
+
+-- Destructive (cascades depend on FK setup — prefer a disposable local volume):
+-- DELETE FROM topics
+-- WHERE topic_key LIKE 'ingestion-topic-%'
+--    OR topic_key LIKE 'list-topic-%'
+--    OR topic_key LIKE 'page-topic-%'
+--    OR topic_key LIKE 'lifecycle-topic-%'
+--    OR topic_key LIKE 'example-topic-%'
+--    OR topic_key LIKE 'layer1-handoff-%'
+--    OR topic_key LIKE 'generated-facts-%'
+--    OR topic_key LIKE 'context-topic-%';

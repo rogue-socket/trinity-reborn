@@ -1,0 +1,10 @@
+{
+  "topic_key": "uk-general-election-2024",
+  "display_name": "2024 United Kingdom general election results",
+  "scope": {
+    "description": "Declared House of Commons results from the 4 July 2024 general election.",
+    "geography": ["United Kingdom"],
+    "start": "2024-07-04",
+    "end": null
+  }
+}

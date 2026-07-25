@@ -1,0 +1,12 @@
+{
+  "topic_key": "india-student-protests-2026",
+  "display_name": "India student protests over exam leaks",
+  "scope": {
+    "description": "Student demonstrations following alleged entrance examination leaks.",
+    "geography": [
+      "India"
+    ],
+    "start": "2026-03-01",
+    "end": null
+  }
+}
