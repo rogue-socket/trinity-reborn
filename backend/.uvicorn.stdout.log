@@ -1,0 +1,5 @@
+INFO:     127.0.0.1:64368 - "GET /openapi.json HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51097 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51097 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+    INFO:     127.0.0.1:52933 - "GET /discover HTTP/1.1" 200 OK
+          
