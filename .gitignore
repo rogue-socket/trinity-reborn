@@ -1,0 +1,11 @@
+.venv/
+.env
+__pycache__/
+*.py[cod]
+world_bible/
+blueprints/
+episodes/
+audio/
+runs/
+.env
+layer2_mock/
