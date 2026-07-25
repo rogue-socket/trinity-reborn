@@ -50,3 +50,24 @@ uv run uvicorn app.main:app --reload
 ```
 
 The health check is available at `GET /health`.
+
+## Layer 1 service ownership and API contract
+
+The following folders under `backend/app/services/` belong to the Research Engine
+Layer 1 team:
+
+- `discovery/`
+- `extraction/`
+- `deduplication/`
+- `package_builder/`
+
+Layer 2 Knowledge Graph work must live in a separate service folder, such as
+`backend/app/services/knowledge_graph/` or `backend/app/services/graph_engine/`.
+It should not modify Layer 1 service files.
+
+Layer 1 exposes these API endpoints:
+
+- `GET /discover` — retrieves current-affairs article metadata for a topic.
+- `POST /extract` — extracts article text and metadata from discovered URLs.
+- `POST /deduplicate` — groups extracted articles by underlying story.
+- `POST /build-package` — deduplicates articles and builds a Layer 2 research package.

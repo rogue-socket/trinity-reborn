@@ -13,8 +13,12 @@ class Settings:
     """Runtime settings loaded from environment variables."""
 
     database_url: str
+    gemini_api_key: str | None
 
 
 def get_settings() -> Settings:
     """Load application settings without coupling configuration to routes."""
-    return Settings(database_url=os.getenv("DATABASE_URL", DEFAULT_DATABASE_URL))
+    return Settings(
+        database_url=os.getenv("DATABASE_URL", DEFAULT_DATABASE_URL),
+        gemini_api_key=os.getenv("GEMINI_API_KEY"),
+    )
