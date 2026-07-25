@@ -1535,12 +1535,16 @@ def test_promotes_structured_claims_to_a_confirmed_contradiction() -> None:
         assert relationship is not None
         assertion_statuses = list(
             session.scalars(
-                select(RelationshipAssertion.status)
-                .where(RelationshipAssertion.relationship_id == relationship.id)
-                .order_by(RelationshipAssertion.id)
+                select(RelationshipAssertion.status).where(
+                    RelationshipAssertion.relationship_id == relationship.id
+                )
             )
         )
-        assert assertion_statuses == ["possible_contradiction", "confirmed_contradiction"]
+        # Status rows are UUID-keyed; do not assume insertion order matches id order.
+        assert sorted(assertion_statuses) == [
+            "confirmed_contradiction",
+            "possible_contradiction",
+        ]
 
     with TestClient(app) as client:
         filtered = client.get(
