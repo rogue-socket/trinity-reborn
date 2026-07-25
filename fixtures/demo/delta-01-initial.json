@@ -15,23 +15,23 @@
     {
       "article_id": "art-d1",
       "source_id": "src-d1",
-      "content": "An exam paper leaked before the national entrance test, student groups said on Monday. Organisers announced demonstrations across the capital city for the following week. The education ministry has not commented on the allegation."
+      "content": "An exam paper leaked before the entrance examination, student groups said on Monday. Organisers announced demonstrations across the capital city for the following week. The education ministry has not commented on the allegation."
     }
   ],
   "evidence": [
     {
       "evidence_id": "ev-d1-leak",
       "article_id": "art-d1",
-      "excerpt": "An exam paper leaked before the national entrance test",
+      "excerpt": "An exam paper leaked before the entrance examination",
       "start_offset": 0,
-      "end_offset": 54
+      "end_offset": 52
     },
     {
       "evidence_id": "ev-d1-demos",
       "article_id": "art-d1",
       "excerpt": "Organisers announced demonstrations across the capital city",
-      "start_offset": 87,
-      "end_offset": 146
+      "start_offset": 85,
+      "end_offset": 144
     }
   ],
   "entities": [
@@ -92,7 +92,7 @@
   "claims": [
     {
       "claim_id": "clm-d1-leak",
-      "text": "An exam paper leaked before the national entrance test.",
+      "text": "An exam paper leaked before the entrance examination.",
       "event_id": "evt-d1-allegations",
       "subject_ref": "ent-d1-ministry",
       "predicate_candidate": "exam_leak_occurred",

@@ -208,6 +208,8 @@ def test_the_demo_blueprint_does_not_name_the_real_actors(demo_topic_id, artefac
         "opposition coalition",
         "independent news desk",
         "capital city",
+        "parliament",
+        "india",
     ):
         assert label not in rendered, f"the real label {label!r} reached the blueprint"
 

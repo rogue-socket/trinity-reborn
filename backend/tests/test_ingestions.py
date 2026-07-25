@@ -1535,9 +1535,9 @@ def test_promotes_structured_claims_to_a_confirmed_contradiction() -> None:
         assert relationship is not None
         assertion_statuses = list(
             session.scalars(
-                select(RelationshipAssertion.status).where(
-                    RelationshipAssertion.relationship_id == relationship.id
-                )
+                select(RelationshipAssertion.status)
+                .where(RelationshipAssertion.relationship_id == relationship.id)
+                .order_by(RelationshipAssertion.id)
             )
         )
         assert assertion_statuses == ["possible_contradiction", "confirmed_contradiction"]

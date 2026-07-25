@@ -1,9 +1,9 @@
 import uuid
 from datetime import date, datetime
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from pydantic import BaseModel, Field
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -29,6 +29,7 @@ class CreateTopicRequest(BaseModel):
 class TopicResponse(BaseModel):
     topic_id: uuid.UUID
     topic_key: str
+    display_name: str
     status: str
     created_at: datetime
 
@@ -38,17 +39,30 @@ class TopicLifecycleRequest(BaseModel):
     reason: str = Field(min_length=1)
 
 
+def _topic_response(topic: Topic) -> TopicResponse:
+    return TopicResponse(
+        topic_id=topic.id,
+        topic_key=topic.topic_key,
+        display_name=topic.display_name,
+        status=topic.status,
+        created_at=topic.created_at,
+    )
+
+
 @router.get("/topics", response_model=list[TopicResponse])
-def list_topics(session: Session = Depends(get_session)) -> list[TopicResponse]:
-    return [
-        TopicResponse(
-            topic_id=topic.id,
-            topic_key=topic.topic_key,
-            status=topic.status,
-            created_at=topic.created_at,
-        )
-        for topic in session.scalars(select(Topic).order_by(Topic.created_at.desc()))
-    ]
+def list_topics(
+    response: Response,
+    limit: int = Query(default=50, ge=1, le=200),
+    offset: int = Query(default=0, ge=0),
+    session: Session = Depends(get_session),
+) -> list[TopicResponse]:
+    """Return a page of topics. Total count is in the ``X-Total-Count`` response header."""
+    total = session.scalar(select(func.count()).select_from(Topic)) or 0
+    response.headers["X-Total-Count"] = str(total)
+    topics = session.scalars(
+        select(Topic).order_by(Topic.created_at.desc()).offset(offset).limit(limit)
+    )
+    return [_topic_response(topic) for topic in topics]
 
 
 @router.post("/topics", response_model=TopicResponse, status_code=status.HTTP_201_CREATED)
@@ -68,12 +82,7 @@ def create_topic(payload: CreateTopicRequest, session: Session = Depends(get_ses
             raise HTTPException(status_code=409, detail="topic_key is already registered")
         raise
     session.refresh(topic)
-    return TopicResponse(
-        topic_id=topic.id,
-        topic_key=topic.topic_key,
-        status=topic.status,
-        created_at=topic.created_at,
-    )
+    return _topic_response(topic)
 
 
 @router.post("/topics/{topic_id}/lifecycle", response_model=TopicResponse)
@@ -95,4 +104,4 @@ def transition_topic(
         topic.status = payload.status
         session.commit()
         session.refresh(topic)
-    return TopicResponse(topic_id=topic.id, topic_key=topic.topic_key, status=topic.status, created_at=topic.created_at)
+    return _topic_response(topic)

@@ -196,84 +196,16 @@ Design constraints discovered while building:
 
 ---
 
-## 4. Remaining gaps (do these next)
+## 4. Remaining gaps
 
-Ordered for demo readiness. Each item is independently shippable.
+### Gaps A–D — **done in follow-up commit**
 
-### Gap A — Demo hygiene: language / narrate defaults and timeouts `[next]`
-
-**Where:**
-
-- `orchestrator_service/contracts.py` — `narrate: bool = False`
-- `orchestrator_service/orchestrator.py` — language resolution + `DOWNSTREAM_TIMEOUT_SECONDS`
-- Downstream clients in world_builder / assembler / story / translator / audio (`httpx` calls)
-
-**Problem:** Demo operators forget `narrate=true` or language lists; long LLM/TTS calls may hang without clear timeouts on some service-to-service calls.
-
-**Work:**
-
-1. Inventory every `httpx.get/post` in Layer 3; ensure explicit timeouts.
-2. Decide demo defaults: e.g. `narrate=True` for orchestrator demo path **or** document required flags in README; prefer explicit env `DEMO_MODE` over silent production-default changes.
-3. Surface clearer 503/504 messages when ElevenLabs/OpenAI missing (`.env` still often absent locally).
-
-**Verify:** Start orchestrator with keys; run one topic; confirm audio attempted when intended; kill a downstream service and confirm timeout rather than hang.
-
----
-
-### Gap B — Topic list pagination + purge ~1830 stale topics `[next]`
-
-**Where:** `backend/app/api/topics.py` → `list_topics` returns full table; frontend `get("/topics")`.
-
-**Problem:** Local DB polluted by tests/probes (~1800+ topics). Dashboard becomes unusable.
-
-**Work:**
-
-1. Add pagination (`limit`/`offset` or cursor) to `GET /topics`; default small page size.
-2. Frontend: load page, don’t dump entire list.
-3. One-shot ops cleanup (ask before destructive SQL):
-
-```sql
--- ONLY after operator approval; prefer deleting test-prefixed keys first
-DELETE FROM topics WHERE topic_key LIKE 'ingestion-topic-%' OR topic_key LIKE '%-%hex%';
-```
-
-Better: script that deletes topics matching known test prefixes, or wipe local volume `docker compose down -v` for a clean demo machine.
-
-**Verify:** `GET /topics?limit=20` returns bounded list; dashboard loads <1s with large table.
-
----
-
-### Gap C — Anchor Layer 3 artifact directories to repo root `[next]`
-
-**Where:** `*/config.py` for `WORLD_BIBLE_DIR`, `BLUEPRINT_DIR`, `EPISODE_DIR`, `AUDIO_DIR` — currently relative to process CWD.
-
-**Problem:** Starting uvicorn from wrong directory scatters `world_bible/`, `blueprints/`, etc., or fails to find prior artifacts.
-
-**Work:** Resolve paths relative to repository root (or absolute env vars). Shared helper preferred over six copy-pasted `Path(__file__).resolve().parents[...]` variants. Document in each service README.
-
-**Verify:** Start services from `/tmp`; artifacts still land under repo root; pipeline tests still pass with monkeypatched dirs.
-
----
-
-### Gap D — Residual real-world leakage into Layer 3 `[should fix]`
-
-Even after title synthesis + entity scrubbing:
-
-| Surface | Risk |
-|---------|------|
-| Claim text inside dispute quotes | May contain place names / institutions never mapped as entities (e.g. “Parliament”, “national entrance test”) |
-| Summary fallback when no disputes | Raw Layer 2 summary prose |
-| Story generator / translator prompts | May receive scrubbed blueprint but model can still invent real names if context leaks elsewhere |
-
-**Work options:**
-
-1. Broader scrubbing dictionary (topic geography, display_name tokens) — brittle.
-2. LLM rewrite of conflict prose with “no real nouns” instruction — slower, needs keys.
-3. Demo corpus rewrite of claim text to avoid unmapped real nouns — fastest for the talk.
-
-**Verify:** `json.dumps(blueprint).casefold()` contains no substrings from a deny-list (`india`, `parliament`, `labour`, topic display name tokens).
-
----
+| Gap | Resolution |
+|-----|------------|
+| A Narrate / timeouts | `DEMO_MODE` env; `_post(..., timeout=client.timeout)`; documented in README / `.env.example` |
+| B Topic pagination | `GET /topics?limit=&offset=` + `X-Total-Count`; dashboard uses `limit=50`; `display_name` on topic responses; `scripts/purge_test_topics.sql` |
+| C Artefact dirs | Shared `artifact_paths.py`; all Layer 3 `config.py` files use it |
+| D Demo noun scrub | `fixtures/demo` claim/evidence prose no longer uses Parliament / national-entrance wording; pipeline deny-list extended |
 
 ### Gap E — Event / claim candidate limits still truncate `[should fix]`
 
@@ -369,12 +301,11 @@ Or rely on `test_the_demo_corpus_casts_an_ensemble_with_opposed_leads` as the of
 
 ---
 
-## 7. Suggested next agent commit sequence
+## 7. Suggested next agent work
 
-1. Gap C (artifact paths) — small, prevents demo foot-guns.
-2. Gap B (topic pagination + local cleanup) — operator UX.
-3. Gap A (orchestrator defaults/timeouts) — live run reliability.
-4. Gap D (scrub remaining real nouns in demo claim text) — polish for screenshots/audio.
-5. Gap F only if parallel ingest is in the demo script.
+1. Gap E (event/claim candidate windows) if live L1 packages get large.
+2. Gap F (ingestion advisory locks) if the demo script parallelizes ingest.
+3. Gap G (operator `.env` keys) before any live narration demo.
+4. Keep CI green: contradiction status assertions must `.order_by(id)` (Postgres row order is not insertion order).
 
-When done with a gap: update this file’s Gap section status and the human v2 doc’s checklist.
+When closing a gap: update this file and [`demo-fix-handoff.md`](./demo-fix-handoff.md).

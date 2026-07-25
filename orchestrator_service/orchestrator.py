@@ -45,7 +45,9 @@ def _upstream_message(response: httpx.Response) -> str:
 
 def _post(client: httpx.Client, service_name: str, url: str, payload: dict[str, Any]) -> dict[str, Any]:
     try:
-        response = client.post(url, json=payload)
+        # Client already carries DOWNSTREAM_TIMEOUT_SECONDS; pass it per-call so a future
+        # client without a default cannot silently hang the demo.
+        response = client.post(url, json=payload, timeout=client.timeout)
     except httpx.HTTPError as exc:
         raise OrchestratorError(
             status.HTTP_502_BAD_GATEWAY,

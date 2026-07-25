@@ -6,7 +6,15 @@ import httpx
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
-from .config import AUDIO_URL, BLUEPRINT_URL, LAYER2_BASE_URL, STORY_GEN_URL, TRANSLATOR_URL, WORLD_BUILDER_URL
+from .config import (
+    AUDIO_URL,
+    BLUEPRINT_URL,
+    DEMO_MODE,
+    LAYER2_BASE_URL,
+    STORY_GEN_URL,
+    TRANSLATOR_URL,
+    WORLD_BUILDER_URL,
+)
 from .contracts import RunReport, RunTopicRequest
 from .orchestrator import OrchestratorError, run_topic
 
@@ -48,9 +56,15 @@ def health() -> dict[str, object]:
 
 @app.post("/run-topic", response_model=RunReport)
 def run_topic_endpoint(request: RunTopicRequest) -> RunReport:
+    # In demo mode, narrate when the caller omits the field; explicit false still skips audio.
+    narrate = (
+        True
+        if DEMO_MODE and "narrate" not in request.model_fields_set
+        else request.narrate
+    )
     return run_topic(
         str(request.topic_id),
         [str(character_id) for character_id in request.character_ids] if request.character_ids is not None else None,
         request.languages,
-        request.narrate,
+        narrate,
     )

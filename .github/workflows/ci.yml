@@ -8,8 +8,9 @@ permissions:
   contents: read
 
 env:
+  DATABASE_URL: postgresql+psycopg://trinity:trinity@localhost:5432/trinity_reborn
   LAYER3_SERVICES: >-
-    orchestrator_service world_builder_service blueprint_assembler_service
+    artifact_paths.py orchestrator_service world_builder_service blueprint_assembler_service
     story_generator_service translator_service audio_generator_service
 
 jobs:
@@ -31,7 +32,7 @@ jobs:
           --health-retries 15
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v4
 
       - name: Install uv
         uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
@@ -59,14 +60,14 @@ jobs:
 
       - name: Verify backend
         run: |
-          uv run ruff check backend
-          PYTHONPATH=backend uv run mypy backend/app
-          PYTHONPATH=backend uv run pytest backend/tests -q
+          uv run ruff check backend artifact_paths.py
+          PYTHONPATH=backend:. uv run mypy backend/app artifact_paths.py
+          PYTHONPATH=backend:. uv run pytest backend/tests -q
 
       - name: Verify Layer 3 services
         run: |
           uv run ruff check ${{ env.LAYER3_SERVICES }}
-          uv run mypy ${{ env.LAYER3_SERVICES }}
+          PYTHONPATH=. uv run mypy ${{ env.LAYER3_SERVICES }}
 
       - name: Verify frontend
         run: |

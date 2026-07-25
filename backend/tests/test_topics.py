@@ -50,7 +50,42 @@ def test_lists_registered_topics() -> None:
         topics = client.get("/topics")
 
     assert topics.status_code == 200
-    assert created.json()["topic_id"] in {topic["topic_id"] for topic in topics.json()}
+    body = topics.json()
+    assert created.json()["topic_id"] in {topic["topic_id"] for topic in body}
+    listed = next(topic for topic in body if topic["topic_id"] == created.json()["topic_id"])
+    assert listed["display_name"] == "Listed topic"
+
+
+def test_paginates_the_topic_list() -> None:
+    with TestClient(app) as client:
+        created_ids = []
+        for index in range(3):
+            response = client.post(
+                "/topics",
+                json={
+                    "topic_key": f"page-topic-{index}-{uuid.uuid4().hex}",
+                    "display_name": f"Page topic {index}",
+                    "scope": {
+                        "description": "A bounded implementation test topic.",
+                        "geography": [],
+                        "start": "2026-07-01",
+                        "end": None,
+                    },
+                },
+            )
+            assert response.status_code == 201
+            created_ids.append(response.json()["topic_id"])
+
+        page = client.get("/topics", params={"limit": 2, "offset": 0})
+        next_page = client.get("/topics", params={"limit": 2, "offset": 2})
+
+    assert page.status_code == 200
+    assert len(page.json()) == 2
+    assert int(page.headers["X-Total-Count"]) >= 3
+    assert len(next_page.json()) >= 1
+    assert {topic["topic_id"] for topic in page.json()}.isdisjoint(
+        {topic["topic_id"] for topic in next_page.json()}
+    )
 
 
 def test_records_topic_lifecycle_transitions_and_allows_reopening() -> None:

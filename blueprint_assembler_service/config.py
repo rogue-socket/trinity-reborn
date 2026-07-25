@@ -5,9 +5,11 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
+from artifact_paths import artifact_dir
+
 
 load_dotenv(Path(__file__).resolve().parents[1] / ".env")
 
 LAYER2_BASE_URL = os.getenv("LAYER2_BASE_URL", "http://localhost:8000").rstrip("/")
-WORLD_BIBLE_DIR = Path(os.getenv("WORLD_BIBLE_DIR", "./world_bible"))
-BLUEPRINT_DIR = Path(os.getenv("BLUEPRINT_DIR", "./blueprints"))
+WORLD_BIBLE_DIR = artifact_dir("WORLD_BIBLE_DIR", "world_bible")
+BLUEPRINT_DIR = artifact_dir("BLUEPRINT_DIR", "blueprints")

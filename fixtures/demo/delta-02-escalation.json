@@ -15,43 +15,43 @@
     {
       "article_id": "art-d2",
       "source_id": "src-d2",
-      "content": "Thousands of students participated in the march toward Parliament, organisers said. Police used tear gas and baton charges to stop the march near the gates. The opposition coalition has called for the education minister's resignation. Student unions demanded a re-test overseen by an independent examiner. An exam paper leaked before the national entrance test, a second university confirmed."
+      "content": "Thousands of students participated in the march toward the assembly, organisers said. Police used tear gas and baton charges to stop the march near the gates. The opposition coalition has called for the education minister's resignation. Student unions demanded a re-test overseen by an independent examiner. An exam paper leaked before the entrance examination, a second university confirmed."
     }
   ],
   "evidence": [
     {
       "evidence_id": "ev-d2-turnout",
       "article_id": "art-d2",
-      "excerpt": "Thousands of students participated in the march toward Parliament",
+      "excerpt": "Thousands of students participated in the march toward the assembly",
       "start_offset": 0,
-      "end_offset": 65
+      "end_offset": 67
     },
     {
       "evidence_id": "ev-d2-police",
       "article_id": "art-d2",
       "excerpt": "Police used tear gas and baton charges to stop the march",
-      "start_offset": 84,
-      "end_offset": 140
+      "start_offset": 86,
+      "end_offset": 142
     },
     {
       "evidence_id": "ev-d2-resign",
       "article_id": "art-d2",
       "excerpt": "The opposition coalition has called for the education minister's resignation",
-      "start_offset": 157,
-      "end_offset": 233
+      "start_offset": 159,
+      "end_offset": 235
     },
     {
       "evidence_id": "ev-d2-retest",
       "article_id": "art-d2",
       "excerpt": "Student unions demanded a re-test overseen by an independent examiner",
-      "start_offset": 235,
-      "end_offset": 304
+      "start_offset": 237,
+      "end_offset": 306
     },
     {
       "evidence_id": "ev-d2-leak",
       "article_id": "art-d2",
-      "excerpt": "An exam paper leaked before the national entrance test",
-      "start_offset": 306,
+      "excerpt": "An exam paper leaked before the entrance examination",
+      "start_offset": 308,
       "end_offset": 360
     }
   ],
@@ -91,7 +91,7 @@
     {
       "event_id": "evt-d2-march",
       "type": "public_demonstration",
-      "title": "March toward Parliament met by police",
+      "title": "March toward the assembly met by police",
       "temporal": {
         "start": "2026-03-10T11:00:00Z",
         "precision": "day",
@@ -113,7 +113,7 @@
   "claims": [
     {
       "claim_id": "clm-d2-turnout",
-      "text": "Thousands of students participated in the march toward Parliament.",
+      "text": "Thousands of students participated in the march toward the assembly.",
       "event_id": "evt-d2-march",
       "subject_ref": "ent-d2-students",
       "predicate_candidate": "march_participation",
@@ -179,7 +179,7 @@
     },
     {
       "claim_id": "clm-d2-leak",
-      "text": "An exam paper leaked before the national entrance test.",
+      "text": "An exam paper leaked before the entrance examination.",
       "subject_ref": "ent-d2-ministry",
       "predicate_candidate": "exam_leak_occurred",
       "object_ref_or_value": "true",

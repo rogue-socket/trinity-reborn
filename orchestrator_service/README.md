@@ -1,34 +1,35 @@
-# Orchestrator Service
+# orchestrator_service
 
-This FastAPI service only coordinates the Echoes services over HTTP. It does not call an LLM or generate, translate, or synthesize content itself.
+Coordinates the Layer 3 chain over HTTP. Does not call an LLM itself.
 
-## Local ports
+## Ports
 
 | Service | Port |
-| --- | ---: |
-| `layer2_mock` | 8000 |
-| `world_builder_service` | 8001 |
-| `blueprint_assembler_service` | 8002 |
-| `story_generator_service` | 8003 |
-| `translator_service` | 8004 |
-| `audio_generator_service` | 8005 |
-| `orchestrator_service` | 8006 |
-
-The downstream URLs default to these localhost ports. Set `LAYER2_BASE_URL`, `WORLD_BUILDER_URL`, `BLUEPRINT_URL`, `STORY_GEN_URL`, `TRANSLATOR_URL`, or `AUDIO_URL` to override them. `RUN_HISTORY_DIR` defaults to `./runs`; `DOWNSTREAM_TIMEOUT_SECONDS` defaults to 180 seconds.
+|---------|-----:|
+| Layer 2 API | 8000 |
+| world_builder | 8001 |
+| blueprint_assembler | 8002 |
+| story_generator | 8003 |
+| translator | 8004 |
+| audio_generator | 8005 |
+| orchestrator | 8006 |
 
 ## Run
 
-```powershell
-uv sync
+```sh
 uv run uvicorn orchestrator_service.main:app --port 8006
 ```
 
-`GET /health` probes every dependent service live. Run the text-only pipeline without spending ElevenLabs quota:
+```sh
+# Text-only
+curl -sX POST http://localhost:8006/run-topic \
+  -H 'content-type: application/json' \
+  -d '{"topic_id":"<topic-uuid>","narrate":false}'
 
-```powershell
-Invoke-RestMethod -Method Post http://localhost:8006/run-topic `
-  -ContentType 'application/json' `
-  -Body '{"topic_id":"3f7a1b2c-0001-4a10-9c11-000000000001","narrate":false}'
+# With DEMO_MODE=true in .env, omitting narrate turns narration on
+curl -sX POST http://localhost:8006/run-topic \
+  -H 'content-type: application/json' \
+  -d '{"topic_id":"<topic-uuid>"}'
 ```
 
-The completed report is returned and also saved in `runs/<topic_id>/<run_id>.json`.
+Reports are saved under `<repo>/runs/<topic_id>/`. `DOWNSTREAM_TIMEOUT_SECONDS` defaults to 180.

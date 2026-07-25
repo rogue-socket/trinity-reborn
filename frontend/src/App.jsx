@@ -128,7 +128,7 @@ export default function App() {
   const [replaySteps, setReplaySteps] = useState([]);
 
   useEffect(() => {
-    get("/topics")
+    get("/topics?limit=50")
       .then((items) => {
         setTopics(items);
         if (items.length) setTopicId(items[0].topic_id);
@@ -236,7 +236,7 @@ export default function App() {
             {!topics.length && <option>No registered topics</option>}
             {topics.map((topic) => (
               <option key={topic.topic_id} value={topic.topic_id}>
-                {topic.topic_key} · {topic.status}
+                {topic.display_name || topic.topic_key} · {topic.status}
               </option>
             ))}
           </select>

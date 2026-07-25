@@ -32,16 +32,18 @@
 
 ## Still to do (priority)
 
-| Priority | Gap | Why it matters |
-|----------|-----|----------------|
-| Next | **Orchestrator defaults & timeouts** | Easy to forget `narrate`; some calls can hang |
-| Next | **Paginate `/topics` + clean local DB** | ~1800 test topics make the dashboard unusable |
-| Next | **Pin Layer 3 file paths to the repo root** | Starting a service from the wrong folder breaks the pipeline |
-| Should | **Scrub leftover real nouns in claim quotes** | Words like “Parliament” can still appear in the central conflict |
-| Should | **Same candidate-limit bug for events/claims** | Fine for demo size; bites on large live ingest |
-| Should | **Ingestion locking under concurrency** | Only matters if you ingest packages in parallel |
-| Blocked | **API keys in `.env`** | OpenAI / Gemini / ElevenLabs required for a live L3 run |
+| Priority | Gap | Status |
+|----------|-----|--------|
+| Done | Orchestrator `DEMO_MODE` + explicit downstream timeouts | Shipped |
+| Done | Paginate `GET /topics` (+ `X-Total-Count`, dashboard `limit=50`) | Shipped |
+| Done | Pin Layer 3 artefact dirs to repo root (`artifact_paths.py`) | Shipped |
+| Done | Scrub demo claim prose (`Parliament` / entrance-test wording) | Shipped |
+| Should | Same candidate-limit bug for events/claims | Open — fine for demo size |
+| Should | Ingestion locking under concurrency | Open — only if parallel ingest |
+| Blocked | API keys in `.env` | Still required for a live L3 run |
 | Later | Audio unit tests, dashboard polish | Nice-to-have |
+
+Ops: preview/delete test topics with [`scripts/purge_test_topics.sql`](../scripts/purge_test_topics.sql), or `docker compose down -v` on a disposable machine.
 
 ---
 
