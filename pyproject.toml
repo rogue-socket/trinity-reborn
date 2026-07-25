@@ -1,0 +1,33 @@
+[project]
+name = "trinity-reborn-layer2"
+version = "0.1.0"
+description = "Layer 2 current-affairs knowledge graph MVP"
+requires-python = ">=3.14"
+dependencies = [
+    "alembic>=1.14,<2",
+    "fastapi>=0.115,<1",
+    "psycopg[binary]>=3.2,<4",
+    "sqlalchemy>=2.0,<3",
+    "uvicorn[standard]>=0.30,<1",
+]
+
+[dependency-groups]
+dev = [
+    "httpx2>=2.9.1",
+    "mypy>=2.3.0",
+    "pytest>=8,<9",
+    "ruff>=0.16.0",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["backend/tests"]
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F"]
+
+[tool.mypy]
+python_version = "3.14"
+check_untyped_defs = true
+ignore_missing_imports = true
+warn_unused_ignores = true
+allow_redefinition = true

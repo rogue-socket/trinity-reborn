@@ -1,0 +1,5 @@
+{
+  "counts": {"entities": 1, "events": 1, "claims": 2, "relationships": 2, "disputes": 1},
+  "entities": [{"label": "Labour Party", "status": "active"}],
+  "relationship_types": ["CONTRADICTS", "PARTICIPATED_IN"]
+}

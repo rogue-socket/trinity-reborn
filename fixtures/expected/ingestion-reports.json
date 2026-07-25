@@ -1,0 +1,7 @@
+{
+  "ingestions": [
+    {"status": "accepted", "created": 4, "matched": 0, "contradictions": 0},
+    {"status": "accepted", "created": 0, "matched": 3, "contradictions": 0},
+    {"status": "accepted", "created": 0, "matched": 1, "contradictions": 1}
+  ]
+}

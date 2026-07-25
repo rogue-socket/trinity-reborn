@@ -1,35 +1,38 @@
-# Trinity Reborn
+# Current Affairs Knowledge Graph - Layer 2
 
-Trinity Reborn is a three-layer current-affairs storytelling pipeline:
+Local FastAPI, PostgreSQL, and React MVP for receiving immutable Layer 1 research deltas and serving a canonical, provenance-aware graph to Layer 3.
 
-1. **Layer 1 — research and ingestion:** gathers source material and sends structured, self-contained research deltas.
-2. **Layer 2 — knowledge graph:** preserves incoming packages, reconciles them into a canonical, provenance-aware graph, and provides retrieval APIs.
-3. **Layer 3 — storytelling:** queries Layer 2 and turns its context into narratives, podcasts, or other creative outputs.
+## Run locally
 
-This repository currently defines the Layer 2 hackathon MVP. Application code has not been created yet.
+```sh
+docker compose up -d db
+uv run alembic upgrade head
+PYTHONPATH=backend uv run uvicorn app.main:app --reload
+npm run dev --prefix frontend
+```
 
-## Product documents
+The API exposes OpenAPI at `http://localhost:8000/docs`; the dashboard runs on the Vite URL printed by the final command.
 
-- [`prds/Current Affairs Knowledge Graph Layer PRD.pdf`](prds/Current%20Affairs%20Knowledge%20Graph%20Layer%20PRD.pdf) — original product requirements.
-- [`prds/current-affairs-knowledge-graph-layer.md`](prds/current-affairs-knowledge-graph-layer.md) — implementation-ready Layer 2 specification.
+## Demo acceptance checklist
 
-The Markdown specification is the development reference. It defines the Layer 1 delta contract, immutable raw storage, canonical graph model, reconciliation policy, PostgreSQL data model, Layer 3 APIs, operator dashboard, and test plan.
+1. In the dashboard, select **Replay seeded demo**.
+2. Confirm one entity and event are reconciled across the first two deltas.
+3. Confirm the third delta leaves both conflicting claims visible and creates a dispute.
+4. Confirm the timeline is ordered by the event timestamp.
+5. Use **Run context query** and verify the returned-node and relationship coverage.
+6. Use **Load raw export** and verify original claim wording is present without URLs, publishers, Layer 1 IDs, or package metadata.
+7. Inspect the latest ingestion report to view the reconciliation decisions and processing versions.
 
-## MVP boundaries
+## Verify
 
-- Layer 1 sends independent deltas for a Layer 2-registered topic; it does not need prior canonical IDs.
-- Layer 2 owns canonical IDs and preserves every input package exactly as received.
-- Conflicting, corrected, retracted, and superseded claims remain queryable with explicit status.
-- Layer 3 talks only to Layer 2 APIs. It receives graph context and permitted raw story material, never Layer 1 source URLs, local IDs, or delivery metadata.
-- The MVP runs locally with FastAPI, PostgreSQL, and a small React operator dashboard.
-
-## Planned local development
-
-The implementation specification calls for:
-
-- a FastAPI ingestion and retrieval service;
-- PostgreSQL for raw package and graph storage;
-- a React dashboard for graph evolution and Layer 3-style query inspection;
-- a three-delta seeded scenario covering initial population, an update, and a conflict or correction.
-
-See the Markdown specification for API contracts, schema requirements, reconciliation rules, and acceptance criteria.
+```sh
+uv run alembic upgrade head
+uv run alembic check
+uv run ruff check backend
+PYTHONPATH=backend uv run mypy backend/app
+PYTHONPATH=backend uv run pytest backend/tests -q
+npm run lint --prefix frontend
+npm run typecheck --prefix frontend
+npm test --prefix frontend
+npm run build --prefix frontend
+```
