@@ -9,6 +9,12 @@ from app.core.database import get_session
 from app.repositories.discovery import DiscoveryRepository
 from app.services.discovery.service import GoogleNewsDiscoveryService
 from app.services.discovery.workflow import DiscoveryWorkflow
+from app.services.extraction.service import ExtractionService
+
+
+async def get_extraction_service() -> ExtractionService:
+    """Build the stateless article extraction service."""
+    return ExtractionService()
 
 
 async def get_discovery_workflow(
