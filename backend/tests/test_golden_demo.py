@@ -66,7 +66,8 @@ def test_three_delta_demo_matches_the_golden_graph_shape() -> None:
         for item in raw_export.json()["items"]
     ] == expected_raw_export["items"]
     assert {"topic", "timeline", "entities", "events", "claims", "relationships", "disputes", "coverage"}.issubset(body)
-    assert body["timeline"] == body["events"]
+    assert [item["event_id"] for item in body["timeline"]] == [item["event_id"] for item in body["events"]]
+    assert [item["order"] for item in body["timeline"]] == list(range(1, len(body["events"]) + 1))
     assert body["coverage"]["truncated"] is False
     assert all({"claim_id", "status", "raw_text", "evidence"}.issubset(item) for item in raw_export.json()["items"])
     assert "package_id" not in raw_export.text

@@ -26,6 +26,7 @@ from app.models import (
     ProvenanceLink,
     RawPackage,
     ResolutionDecision,
+    RelationshipAssertion,
     RelationshipStatusHistory,
     Topic,
     TopicAnnotation,
@@ -123,6 +124,11 @@ def _claim_items(session: Session, topic_id: uuid.UUID, as_of: datetime | None) 
             "epistemic_status": claim.epistemic_status,
             "status": statuses[claim.id],
             "event_id": str(claim.canonical_event_id) if claim.canonical_event_id else None,
+            "subject_ref": (
+                str(assertion.subject_id)
+                if assertion is not None and assertion.subject_type == "entity"
+                else None
+            ),
             "temporal": (
                 assertion.temporal_json
                 if assertion
@@ -144,6 +150,8 @@ def _event_item(session: Session, event: CanonicalEvent, as_of: datetime | None 
         "type": event.event_type,
         "status": event.status,
         "temporal": context.temporal_json if context else {},
+        "participant_entity_ids": [str(value) for value in context.participant_ids] if context else [],
+        "location_entity_ids": [str(value) for value in context.location_ids] if context else [],
         "confidence": _confidence_items(session, "event", event.id, as_of),
         "support": _support_summary(session, "event", event.id, as_of),
     }
@@ -261,6 +269,60 @@ def _annotations(session: Session, topic_id: uuid.UUID, kind: str, as_of: dateti
         for item in annotations
         if item.payload.get("label") or item.payload.get("text")
     ]
+
+
+def _dispute_description(session: Session, relationship_id: uuid.UUID, status: str) -> str:
+    """Prefer the assertion that argued for the effective status; it explains the contradiction best."""
+    assertions = list(
+        session.scalars(
+            select(RelationshipAssertion)
+            .where(RelationshipAssertion.relationship_id == relationship_id)
+            .order_by(RelationshipAssertion.confidence.desc(), RelationshipAssertion.id)
+        )
+    )
+    for assertion in assertions:
+        if assertion.status == status:
+            return assertion.rationale
+    return assertions[0].rationale if assertions else "Claims about the same subject disagree."
+
+
+def _disputes(
+    session: Session,
+    relationships: list[GraphRelationship],
+    statuses: dict[uuid.UUID, str],
+    claim_subjects: dict[str, str | None],
+    visible_entity_ids: set[str],
+) -> list[dict]:
+    """Layer 3 turns each contradiction into a plot thread, so it needs prose and the entities involved."""
+    disputes = []
+    for relationship in relationships:
+        if relationship.relationship_type != "CONTRADICTS":
+            continue
+        related_claim_ids = [
+            str(node_id)
+            for node_id, node_type in (
+                (relationship.subject_id, relationship.subject_type),
+                (relationship.object_id, relationship.object_type),
+            )
+            if node_type == "claim"
+        ]
+        related_entity_ids = sorted(
+            {
+                subject
+                for claim_id in related_claim_ids
+                if (subject := claim_subjects.get(claim_id)) is not None and subject in visible_entity_ids
+            }
+        )
+        disputes.append(
+            {
+                "dispute_id": str(relationship.id),
+                "description": _dispute_description(session, relationship.id, statuses[relationship.id]),
+                "status": statuses[relationship.id],
+                "related_entity_ids": related_entity_ids,
+                "related_claim_ids": related_claim_ids,
+            }
+        )
+    return disputes
 
 
 def _topic_events(session: Session, topic_id: uuid.UUID, as_of: datetime | None = None) -> list[dict]:
@@ -491,6 +553,33 @@ def get_topic_context(
         for item in claim_items
         if item["status"] == "active"
     ]
+    timeline = [
+        {
+            "event_id": item["event_id"],
+            "order": order,
+            "title": item["title"],
+            "status": item["status"],
+            "temporal": item["temporal"],
+        }
+        for order, item in enumerate(returned_events, start=1)
+    ]
+    disputes = _disputes(
+        session,
+        relationships,
+        relationship_statuses,
+        {item["claim_id"]: item["subject_ref"] for item in claim_items},
+        {item["entity_id"] for item in returned_entities},
+    )
+    interpretations = [
+        {
+            "interpretation_id": f"{kind}:{index}",
+            "text": annotation["label"],
+            "labelled": "interpretive",
+        }
+        for kind in ("themes", "sentiment")
+        for index, annotation in enumerate(_annotations(session, topic_id, kind, as_of))
+        if annotation["label"]
+    ]
     next_cursor = _encode_cursor(offset + max_nodes) if offset + max_nodes < node_count else None
     truncated = next_cursor is not None or relationship_count > max_relationships
     return {
@@ -501,11 +590,11 @@ def get_topic_context(
             "status": _topic_status(session, topic, as_of),
         },
         "summary": {
-            "text": None,
+            "text": " ".join(item["text"] for item in summary_claims),
             "claim_ids": [item["claim_id"] for item in summary_claims],
             "claims": summary_claims,
         },
-        "timeline": returned_events,
+        "timeline": timeline,
         "entities": returned_entities,
         "events": returned_events,
         "claims": returned_claims,
@@ -526,16 +615,12 @@ def get_topic_context(
             }
             for relationship in relationships
         ],
-        "disputes": [
-            str(relationship.id)
-            for relationship in relationships
-            if relationship.relationship_type == "CONTRADICTS"
-        ],
+        "disputes": disputes,
         "actors": actors,
         "uncertainties": _annotations(session, topic_id, "uncertainties", as_of),
         "themes": _annotations(session, topic_id, "themes", as_of) if include_interpretations else [],
         "sentiment": _annotations(session, topic_id, "sentiment", as_of) if include_interpretations else [],
-        "interpretations": [] if include_interpretations else [],
+        "interpretations": interpretations if include_interpretations else [],
         "coverage": {
             "returned_nodes": len(returned_ids),
             "returned_relationships": len(relationships),

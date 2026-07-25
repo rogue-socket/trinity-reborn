@@ -1096,13 +1096,17 @@ def test_returns_a_structured_story_summary_with_actor_roles_and_interpretive_an
     claim_id = next(item["canonical_id"] for item in ingestion.json()["object_results"] if item["local_type"] == "claim")
     entity_id = next(item["canonical_id"] for item in ingestion.json()["object_results"] if item["local_type"] == "entity")
     assert body["summary"] == {
-        "text": None,
+        "text": "Example Group held a meeting.",
         "claim_ids": [claim_id],
         "claims": [{"claim_id": claim_id, "text": "Example Group held a meeting.", "status": "active"}],
     }
     assert body["actors"] == [{"entity_id": entity_id, "label": "Example Group", "roles": ["PARTICIPATED_IN"]}]
     assert body["themes"] == [{"label": "public activity", "interpretive": True}]
     assert body["sentiment"] == [{"label": "tense", "interpretive": True}]
+    assert body["interpretations"] == [
+        {"interpretation_id": "themes:0", "text": "public activity", "labelled": "interpretive"},
+        {"interpretation_id": "sentiment:0", "text": "tense", "labelled": "interpretive"},
+    ]
     assert body["uncertainties"] == [{"text": "The reported attendance is unverified.", "status": "uncertain"}]
 
 
