@@ -7,8 +7,8 @@ Generates one short English episode from one character perspective in a complete
 Ensure `BLUEPRINT_DIR/<topic_id>/blueprint.json` has been built, then run from the repository root:
 
 ```powershell
-pip install -r story_generator_service/requirements.txt
-uvicorn story_generator_service.main:app --port 8003
+uv sync
+uv run uvicorn story_generator_service.main:app --port 8003
 ```
 
 `OPENAI_API_KEY`, `BLUEPRINT_DIR`, and `EPISODE_DIR` are loaded from `.env`; directory defaults are `./blueprints` and `./episodes`.

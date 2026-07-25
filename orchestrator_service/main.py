@@ -48,4 +48,9 @@ def health() -> dict[str, object]:
 
 @app.post("/run-topic", response_model=RunReport)
 def run_topic_endpoint(request: RunTopicRequest) -> RunReport:
-    return run_topic(request.topic_id, request.character_ids, request.languages, request.narrate)
+    return run_topic(
+        str(request.topic_id),
+        [str(character_id) for character_id in request.character_ids] if request.character_ids is not None else None,
+        request.languages,
+        request.narrate,
+    )

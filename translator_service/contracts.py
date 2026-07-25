@@ -1,11 +1,14 @@
 """Translator request schema; Episode is shared with story_generator_service."""
 
-from pydantic import BaseModel, Field, field_validator
+from uuid import UUID
+
+from pydantic import BaseModel, field_validator
 
 
 class TranslateRequest(BaseModel):
-    topic_id: str = Field(min_length=1)
-    character_id: str = Field(min_length=1)
+    # Both identifiers become path segments, so they are parsed rather than trusted.
+    topic_id: UUID
+    character_id: UUID
     target_languages: list[str] | None = None
     force: bool = False
 

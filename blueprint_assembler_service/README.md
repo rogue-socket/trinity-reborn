@@ -7,8 +7,8 @@ Deterministic, LLM-free assembly of Layer 2 context and a completed World Bible 
 Start and seed Layer 2, then ensure `WORLD_BIBLE_DIR/<topic_id>/world.json` and `characters.json` exist (run `world_builder_service` first). From the repository root:
 
 ```powershell
-pip install -r blueprint_assembler_service/requirements.txt
-uvicorn blueprint_assembler_service.main:app --port 8002
+uv sync
+uv run uvicorn blueprint_assembler_service.main:app --port 8002
 ```
 
 `LAYER2_BASE_URL`, `WORLD_BIBLE_DIR`, and `BLUEPRINT_DIR` are loaded from `.env`, with defaults of `http://localhost:8000`, `./world_bible`, and `./blueprints`.

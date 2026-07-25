@@ -7,8 +7,8 @@ Generates ElevenLabs narration for existing episode text. It uses a persistent, 
 `ELEVENLABS_API_KEY`, `OPENAI_API_KEY`, `BLUEPRINT_DIR`, `EPISODE_DIR`, `AUDIO_DIR`, and `ELEVENLABS_FALLBACK_VOICE_ID` are loaded from `.env`.
 
 ```powershell
-pip install -r audio_generator_service/requirements.txt
-uvicorn audio_generator_service.main:app --port 8005
+uv sync
+uv run uvicorn audio_generator_service.main:app --port 8005
 ```
 
 The process validates the ElevenLabs key before it becomes ready. The health endpoint performs the same live validation and returns current character usage:

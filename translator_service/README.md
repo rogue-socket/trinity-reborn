@@ -7,8 +7,8 @@ Gemini-powered, per-language translation of completed English episodes. It does 
 The service loads `GEMINI_API_KEY`, optional `GEMINI_MODEL`, `BLUEPRINT_DIR`, and `EPISODE_DIR` from `.env`. The configured model is checked against the API's visible models and must be Flash-tier, never Pro.
 
 ```powershell
-pip install -r translator_service/requirements.txt
-uvicorn translator_service.main:app --port 8004
+uv sync
+uv run uvicorn translator_service.main:app --port 8004
 ```
 
 ```powershell

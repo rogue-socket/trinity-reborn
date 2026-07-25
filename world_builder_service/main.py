@@ -22,4 +22,4 @@ def health() -> dict[str, str]:
 
 @app.post("/build-world", response_model=BuildWorldResponse)
 def build_world_endpoint(request: BuildWorldRequest) -> BuildWorldResponse:
-    return build_world(request.topic_id)
+    return build_world(str(request.topic_id))

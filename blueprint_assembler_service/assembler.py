@@ -6,8 +6,8 @@ import logging
 from collections import Counter, defaultdict
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any
-from uuid import NAMESPACE_URL, uuid5
+from typing import Any, Literal
+from uuid import NAMESPACE_URL, UUID, uuid5
 
 import httpx
 from fastapi import status
@@ -19,7 +19,7 @@ from .contracts import Blueprint, BlueprintCharacter, Character, DisputedThread,
 
 logger = logging.getLogger(__name__)
 REQUIRED_CONTEXT_FIELDS = {"entities", "events", "claims", "timeline", "disputes"}
-TARGET_LANGUAGES = ["en", "hi", "ta", "bn", "pa", "gu"]
+TARGET_LANGUAGES: list[Literal["en", "hi", "ta", "bn", "pa", "gu"]] = ["en", "hi", "ta", "bn", "pa", "gu"]
 
 
 class BlueprintError(Exception):
@@ -210,7 +210,7 @@ def assemble_blueprint(topic_id: str) -> Blueprint:
         for dispute in disputes
     ]
     characters = [
-        BlueprintCharacter(character_id=character_id, **character.model_dump())
+        BlueprintCharacter(character_id=UUID(character_id), **character.model_dump())
         for character_id, character in sorted(characters_by_id.items())
     ]
     blueprint = Blueprint(

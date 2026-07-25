@@ -6,8 +6,12 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict, Field, RootModel, field_validator
 
 
+Role = Literal["protagonist", "supporting", "antagonist"]
+
+
 class BuildWorldRequest(BaseModel):
-    topic_id: str = Field(min_length=1)
+    # The identifier becomes a path segment, so it is parsed rather than trusted.
+    topic_id: UUID
 
 
 class EntityMapEntry(BaseModel):
@@ -38,7 +42,7 @@ class Character(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     source_entity_id: str | None
-    role: Literal["protagonist", "supporting", "antagonist"]
+    role: Role
     name: str = Field(min_length=1)
     goals: list[str]
     fears: list[str]

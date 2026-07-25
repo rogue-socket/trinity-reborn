@@ -6,7 +6,7 @@ import time
 from datetime import UTC, datetime
 from functools import lru_cache
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 from fastapi import status
 from google import genai
@@ -142,6 +142,7 @@ def translate_language(english_story: str, language: str, glossary: list[str]) -
                 "gemini_translation_failed",
                 f"Gemini translation failed for {language}: HTTP {exc.code} {exc.message or ''}".strip(),
             ) from exc
+    raise AssertionError("retry loop should always return or raise")
 
 
 def translate_episode(topic_id: str, character_id: str, target_languages: list[str] | None, force: bool) -> Episode:
@@ -168,7 +169,7 @@ def translate_episode(topic_id: str, character_id: str, target_languages: list[s
         _write_episode(episode)
 
     expected_translations = [language for language in episode.target_languages if language != "en"]
-    desired_status = (
+    desired_status: Literal["translated", "story_generated"] = (
         "translated"
         if all(episode.story_text.get(language) and language not in episode.translation_errors for language in expected_translations)
         else "story_generated"

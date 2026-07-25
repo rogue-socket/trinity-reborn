@@ -47,4 +47,4 @@ def health() -> dict[str, int | str | bool]:
 
 @app.post("/narrate", response_model=Episode)
 def narrate_episode(request: NarrateRequest) -> Episode:
-    return narrate(request.topic_id, request.character_id, request.languages, request.force)
+    return narrate(str(request.topic_id), str(request.character_id), request.languages, request.force)

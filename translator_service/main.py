@@ -24,4 +24,4 @@ def health() -> dict[str, str]:
 
 @app.post("/translate", response_model=Episode)
 def translate(request: TranslateRequest) -> Episode:
-    return translate_episode(request.topic_id, request.character_id, request.target_languages, request.force)
+    return translate_episode(str(request.topic_id), str(request.character_id), request.target_languages, request.force)

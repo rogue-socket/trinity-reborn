@@ -27,4 +27,4 @@ def health() -> dict[str, str]:
 
 @app.post("/episodes", response_model=Episode)
 def create_episode_endpoint(request: CreateEpisodeRequest) -> Episode:
-    return create_episode(request.topic_id, request.character_id, request.force)
+    return create_episode(str(request.topic_id), str(request.character_id), request.force)

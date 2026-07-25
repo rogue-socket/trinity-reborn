@@ -19,8 +19,8 @@ The downstream URLs default to these localhost ports. Set `LAYER2_BASE_URL`, `WO
 ## Run
 
 ```powershell
-pip install -r orchestrator_service/requirements.txt
-uvicorn orchestrator_service.main:app --port 8006
+uv sync
+uv run uvicorn orchestrator_service.main:app --port 8006
 ```
 
 `GET /health` probes every dependent service live. Run the text-only pipeline without spending ElevenLabs quota:

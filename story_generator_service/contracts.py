@@ -8,8 +8,9 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 class CreateEpisodeRequest(BaseModel):
-    topic_id: str = Field(min_length=1)
-    character_id: str = Field(min_length=1)
+    # Both identifiers become path segments, so they are parsed rather than trusted.
+    topic_id: UUID
+    character_id: UUID
     force: bool = False
 
 

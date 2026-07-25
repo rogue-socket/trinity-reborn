@@ -76,7 +76,7 @@ def _episode_path(topic_id: str, character_id: str) -> Path:
 def load_episode(topic_id: str, character_id: str) -> Episode:
     path = _episode_path(topic_id, character_id)
     if not path.is_file():
-        raise AudioError(status.HTTP_409_CONFLICT, "episode_missing", f"Episode is missing. Run story_generator_service first.")
+        raise AudioError(status.HTTP_409_CONFLICT, "episode_missing", "Episode is missing. Run story_generator_service first.")
     try:
         episode = Episode.model_validate(_read_json(path, "invalid_episode"))
     except ValidationError as exc:
@@ -149,6 +149,7 @@ def infer_voice(character: dict[str, Any]) -> VoiceInference:
             raise AudioError(status.HTTP_502_BAD_GATEWAY, "voice_inference_failed", f"OpenAI could not infer a voice profile: {exc}") from exc
         except ValidationError as exc:
             raise AudioError(status.HTTP_502_BAD_GATEWAY, "invalid_openai_response", "OpenAI returned an invalid voice profile") from exc
+    raise AssertionError("retry loop should always return or raise")
 
 
 def _voices() -> list[dict[str, Any]]:

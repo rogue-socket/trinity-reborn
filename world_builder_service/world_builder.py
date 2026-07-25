@@ -20,6 +20,7 @@ from .contracts import (
     Characters,
     EntityMapEntry,
     GenerationPayload,
+    Role,
     World,
 )
 
@@ -145,7 +146,7 @@ def _eligible_entities(entities: list[dict[str, Any]]) -> list[dict[str, Any]]:
     return [entity for entity in entities if entity.get("type") in CHARACTER_ENTITY_TYPES and entity.get("entity_id")]
 
 
-def calculate_roles(context: dict[str, Any], eligible_entities: list[dict[str, Any]]) -> dict[str, str]:
+def calculate_roles(context: dict[str, Any], eligible_entities: list[dict[str, Any]]) -> dict[str, Role]:
     """Deterministically assign the contract's protagonist/antagonist/supporting roles."""
     eligible_ids = {entity["entity_id"] for entity in eligible_entities}
     if not eligible_ids:
@@ -154,7 +155,7 @@ def calculate_roles(context: dict[str, Any], eligible_entities: list[dict[str, A
         claim.get("subject_ref") for claim in context["claims"] if claim.get("subject_ref") in eligible_ids
     )
     protagonist = min(eligible_ids, key=lambda entity_id: (-claim_counts[entity_id], entity_id))
-    roles = {entity_id: "supporting" for entity_id in eligible_ids}
+    roles: dict[str, Role] = {entity_id: "supporting" for entity_id in eligible_ids}
     roles[protagonist] = "protagonist"
 
     disputed_claim_subjects = {
@@ -180,7 +181,7 @@ def calculate_roles(context: dict[str, Any], eligible_entities: list[dict[str, A
     return roles
 
 
-def _model_input(context: dict[str, Any], entities_for_map: list[dict[str, Any]], characters_to_add: list[dict[str, Any]], roles: dict[str, str]) -> str:
+def _model_input(context: dict[str, Any], entities_for_map: list[dict[str, Any]], characters_to_add: list[dict[str, Any]], roles: dict[str, Role]) -> str:
     """Deliberately exclude topic metadata and source labels from the prompt."""
     entity_descriptors = [
         {"entity_id": item["entity_id"], "source_type": item.get("type")}
@@ -225,7 +226,7 @@ def _is_transient_openai_error(exc: APIError) -> bool:
     )
 
 
-def generate_fictional_content(context: dict[str, Any], entities_for_map: list[dict[str, Any]], characters_to_add: list[dict[str, Any]], roles: dict[str, str]) -> GenerationPayload:
+def generate_fictional_content(context: dict[str, Any], entities_for_map: list[dict[str, Any]], characters_to_add: list[dict[str, Any]], roles: dict[str, Role]) -> GenerationPayload:
     api_key = os.getenv("OPENAI_API_KEY")
     if not api_key:
         raise WorldBuilderError(
@@ -234,10 +235,7 @@ def generate_fictional_content(context: dict[str, Any], entities_for_map: list[d
             "OPENAI_API_KEY is required to build a world",
         )
 
-    client_options: dict[str, str] = {"api_key": api_key}
-    if base_url := os.getenv("OPENAI_BASE_URL"):
-        client_options["base_url"] = base_url
-    client = OpenAI(**client_options)
+    client = OpenAI(api_key=api_key, base_url=os.getenv("OPENAI_BASE_URL") or None)
     prompt = _model_input(context, entities_for_map, characters_to_add, roles)
     system_prompt = (
         "You are the Echoes world builder. Create wholly fictional setting and character details from abstract story signals. "

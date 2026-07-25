@@ -8,16 +8,17 @@ from pydantic import BaseModel, Field, field_validator
 
 
 class RunTopicRequest(BaseModel):
-    topic_id: str = Field(min_length=1)
-    character_ids: list[str] | None = None
+    # Identifiers become path segments downstream, so they are parsed rather than trusted.
+    topic_id: UUID
+    character_ids: list[UUID] | None = None
     languages: list[str] | None = None
     narrate: bool = False
 
-    @field_validator("character_ids", "languages")
+    @field_validator("languages")
     @classmethod
     def values_are_nonempty(cls, values: list[str] | None) -> list[str] | None:
         if values is not None and any(not value.strip() for value in values):
-            raise ValueError("character_ids and languages cannot contain empty values")
+            raise ValueError("languages cannot contain empty values")
         return values
 
 

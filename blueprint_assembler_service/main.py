@@ -23,7 +23,7 @@ def health() -> dict[str, str]:
 @app.post("/build-blueprint", response_model=Blueprint)
 def build_blueprint(request: BuildBlueprintRequest) -> Blueprint:
     try:
-        blueprint = assemble_blueprint(request.topic_id)
+        blueprint = assemble_blueprint(str(request.topic_id))
     except BlueprintError:
         raise
     except (TypeError, ValueError) as exc:

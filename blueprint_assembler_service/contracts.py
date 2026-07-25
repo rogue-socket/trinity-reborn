@@ -1,14 +1,15 @@
 """Pydantic schemas for persisted World Bible and Story Blueprint artifacts."""
 
 from datetime import datetime
-from typing import Any, Literal
+from typing import Literal
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 class BuildBlueprintRequest(BaseModel):
-    topic_id: str = Field(min_length=1)
+    # The identifier becomes a path segment, so it is parsed rather than trusted.
+    topic_id: UUID
 
 
 class EntityMapEntry(BaseModel):

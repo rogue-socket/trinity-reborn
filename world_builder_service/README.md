@@ -19,8 +19,8 @@ $env:OPENAI_API_KEY = "your-key"
 # Optional; these are the defaults:
 # $env:LAYER2_BASE_URL = "http://localhost:8000"
 # $env:WORLD_BIBLE_DIR = "./world_bible"
-pip install -r world_builder_service/requirements.txt
-uvicorn world_builder_service.main:app --port 8001
+uv sync
+uv run uvicorn world_builder_service.main:app --port 8001
 ```
 
 Call it with:

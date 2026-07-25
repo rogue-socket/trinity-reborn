@@ -1,13 +1,15 @@
 """Audio Generator request and OpenAI voice-profile response schemas."""
 
 from typing import Literal
+from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 class NarrateRequest(BaseModel):
-    topic_id: str = Field(min_length=1)
-    character_id: str = Field(min_length=1)
+    # Both identifiers become path segments, so they are parsed rather than trusted.
+    topic_id: UUID
+    character_id: UUID
     languages: list[str] | None = None
     force: bool = False
 

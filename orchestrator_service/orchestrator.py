@@ -3,7 +3,7 @@
 import json
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 from uuid import uuid4
 
 import httpx
@@ -112,7 +112,7 @@ def _run_character(client: httpx.Client, topic_id: str, character_id: str, langu
             {"topic_id": topic_id, "character_id": character_id, "target_languages": languages},
         )
         translation_errors = _errors(translation, "translation_errors")
-        translation_status: str = "partial" if translation_errors else "ok"
+        translation_status: Literal["ok", "partial", "failed"] = "partial" if translation_errors else "ok"
     except OrchestratorError as exc:
         translation_errors = {"_upstream": exc.message}
         translation_status = "failed"
@@ -133,7 +133,7 @@ def _run_character(client: httpx.Client, topic_id: str, character_id: str, langu
             {"topic_id": topic_id, "character_id": character_id, "languages": languages},
         )
         audio_errors = _errors(audio, "audio_errors")
-        audio_status: str = "partial" if audio_errors else "ok"
+        audio_status: Literal["ok", "partial", "failed"] = "partial" if audio_errors else "ok"
     except OrchestratorError as exc:
         audio_errors = {"_upstream": exc.message}
         audio_status = "failed"

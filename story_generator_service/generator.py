@@ -165,10 +165,7 @@ def generate_narrative(prompt: str) -> GeneratedNarrative:
     api_key = os.getenv("OPENAI_API_KEY")
     if not api_key:
         raise EpisodeError(status.HTTP_503_SERVICE_UNAVAILABLE, "openai_not_configured", "OPENAI_API_KEY is required to generate an episode")
-    options: dict[str, str] = {"api_key": api_key}
-    if base_url := os.getenv("OPENAI_BASE_URL"):
-        options["base_url"] = base_url
-    client = OpenAI(**options)
+    client = OpenAI(api_key=api_key, base_url=os.getenv("OPENAI_BASE_URL") or None)
     system_prompt = (
         "Write a self-contained 500-800 word English narrative episode in first-person or close-third perspective. "
         "Use only the fictional names supplied in the user data. Do not invent named real-world countries, cities, public figures, "
