@@ -12,6 +12,7 @@ from urllib.parse import urlencode
 from uuid import uuid4
 
 import feedparser
+import httpx
 import newspaper
 import trafilatura
 from googlenewsdecoder import gnewsdecoder
@@ -208,7 +209,12 @@ def google_news_search_url(topic: str) -> str:
 def discover(topic: str, limit: int) -> list[DiscoveredArticle]:
     """Fetch normalized Google News RSS metadata without reading article pages."""
     url = google_news_search_url(topic)
-    feed = feedparser.parse(url)
+    try:
+        response = httpx.get(url, follow_redirects=True, timeout=10.0)
+        response.raise_for_status()
+    except httpx.HTTPError as error:
+        raise DiscoveryError(f"could not fetch Google News RSS: {error}") from error
+    feed = feedparser.parse(response.content)
     entries = feed.get("entries", [])
     if feed.get("bozo") and not entries:
         raise DiscoveryError(str(feed.get("bozo_exception", "unable to parse feed")))

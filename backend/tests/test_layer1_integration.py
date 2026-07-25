@@ -2,6 +2,7 @@ import asyncio
 import uuid
 
 from fastapi.testclient import TestClient
+import httpx
 import pytest
 from pydantic import ValidationError
 from sqlalchemy.exc import SQLAlchemyError
@@ -67,6 +68,55 @@ def test_layer1_package_is_provenance_complete_and_ingestable() -> None:
     assert len(body["sources"]) == 2
     assert ingestion.status_code == 201
     assert ingestion.json()["status"] == "accepted"
+
+
+def test_discovery_fetches_rss_with_httpx(monkeypatch) -> None:
+    calls: list[tuple[str, dict[str, object]]] = []
+
+    class Response:
+        content = b"""<?xml version="1.0"?>
+        <rss><channel><item>
+        <title>Discovery result</title>
+        <link>https://news.google.com/rss/articles/example</link>
+        <source>Example News</source>
+        <pubDate>Fri, 25 Jul 2026 10:00:00 GMT</pubDate>
+        </item></channel></rss>"""
+
+        def raise_for_status(self) -> None:
+            return None
+
+    def get(url: str, **kwargs: object) -> Response:
+        calls.append((url, kwargs))
+        return Response()
+
+    monkeypatch.setattr(layer1.httpx, "get", get)
+
+    articles = layer1.discover("current affairs", 10)
+
+    assert calls == [
+        (
+            layer1.google_news_search_url("current affairs"),
+            {"follow_redirects": True, "timeout": 10.0},
+        )
+    ]
+    assert articles == [
+        layer1.DiscoveredArticle(
+            title="Discovery result",
+            publisher="Example News",
+            published_date="Fri, 25 Jul 2026 10:00:00 GMT",
+            url="https://news.google.com/rss/articles/example",
+        )
+    ]
+
+
+def test_discovery_wraps_http_errors(monkeypatch) -> None:
+    def get(*_: object, **__: object) -> None:
+        raise httpx.ConnectError("offline")
+
+    monkeypatch.setattr(layer1.httpx, "get", get)
+
+    with pytest.raises(layer1.DiscoveryError, match="could not fetch Google News RSS"):
+        layer1.discover("current affairs", 10)
 
 
 def test_discovery_persists_its_topic_and_results(monkeypatch) -> None:
