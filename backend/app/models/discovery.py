@@ -37,7 +37,7 @@ class DiscoveryResult(Base):
         ForeignKey("discovery_requests.id", ondelete="CASCADE"),
         index=True,
     )
-    headline: Mapped[str] = mapped_column(Text)
+    title: Mapped[str] = mapped_column(Text)
     publisher: Mapped[str] = mapped_column(String(255))
     published_date: Mapped[str] = mapped_column(String(255))
     url: Mapped[str] = mapped_column(Text)

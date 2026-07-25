@@ -38,7 +38,7 @@ def test_discovery_service_normalizes_rss_entries(monkeypatch: MonkeyPatch) -> N
 
     assert [article.model_dump() for article in articles] == [
         {
-            "headline": "A current-affairs headline",
+            "title": "A current-affairs headline",
             "publisher": "Example News",
             "published_date": "Fri, 24 Jul 2026 10:00:00 GMT",
             "url": "https://news.google.com/articles/example",
@@ -49,7 +49,7 @@ def test_discovery_service_normalizes_rss_entries(monkeypatch: MonkeyPatch) -> N
 def test_discovery_workflow_persists_successful_results() -> None:
     articles = [
         {
-            "headline": "A current-affairs headline",
+            "title": "A current-affairs headline",
             "publisher": "Example News",
             "published_date": "Fri, 24 Jul 2026 10:00:00 GMT",
             "url": "https://news.google.com/articles/example",
@@ -131,7 +131,7 @@ def test_discovery_workflow_marks_failed_requests() -> None:
 def test_discover_endpoint_returns_articles() -> None:
     articles = [
         {
-            "headline": "A current-affairs headline",
+            "title": "A current-affairs headline",
             "publisher": "Example News",
             "published_date": "Fri, 24 Jul 2026 10:00:00 GMT",
             "url": "https://news.google.com/articles/example",
@@ -163,7 +163,7 @@ def test_discover_endpoint_returns_articles() -> None:
 def test_discover_endpoint_limit_changes_article_count() -> None:
     articles = [
         {
-            "headline": f"Headline {number}",
+            "title": f"Headline {number}",
             "publisher": "Example News",
             "published_date": "Fri, 24 Jul 2026 10:00:00 GMT",
             "url": f"https://news.google.com/articles/{number}",
@@ -207,7 +207,7 @@ def test_discover_endpoint_returns_articles_when_persistence_fails(
     caplog: Any,
 ) -> None:
     article = DiscoveredArticle(
-        headline="A current-affairs headline",
+        title="A current-affairs headline",
         publisher="Example News",
         published_date="Fri, 24 Jul 2026 10:00:00 GMT",
         url="https://news.google.com/articles/example",

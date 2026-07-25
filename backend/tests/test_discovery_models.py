@@ -16,7 +16,7 @@ def test_discovery_models_define_request_and_result_tables() -> None:
     assert set(DiscoveryResult.__table__.columns.keys()) == {
         "id",
         "discovery_request_id",
-        "headline",
+        "title",
         "publisher",
         "published_date",
         "url",

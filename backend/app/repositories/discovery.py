@@ -33,7 +33,7 @@ class DiscoveryRepository:
             [
                 DiscoveryResult(
                     discovery_request_id=request.id,
-                    headline=article.headline,
+                    title=article.title,
                     publisher=article.publisher,
                     published_date=article.published_date,
                     url=article.url,

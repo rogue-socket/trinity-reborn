@@ -43,7 +43,7 @@ class GoogleNewsDiscoveryService:
         publisher = source.get("title") if isinstance(source, Mapping) else None
 
         return DiscoveredArticle(
-            headline=entry.get("title", ""),
+            title=entry.get("title", ""),
             publisher=publisher or entry.get("author", "Unknown"),
             published_date=entry.get("published", entry.get("updated", "")),
             url=entry["link"],

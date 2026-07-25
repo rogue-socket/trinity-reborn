@@ -4,9 +4,9 @@ from pydantic import BaseModel
 
 
 class DiscoveredArticle(BaseModel):
-    """An article headline returned by the Google News RSS feed."""
+    """An article returned by the Google News RSS feed."""
 
-    headline: str
+    title: str
     publisher: str
     published_date: str
     url: str
