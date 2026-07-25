@@ -13,6 +13,17 @@ npm run dev --prefix frontend
 
 The API exposes OpenAPI at `http://localhost:8000/docs`; the dashboard runs on the Vite URL printed by the final command.
 
+## Layer 1 to Layer 2 handoff
+
+This service hosts the Layer 1 research pipeline and Layer 2 graph together. Layer 1 can
+`GET /discover`, `POST /extract`, `POST /deduplicate`, and `POST /build-package`.
+The resulting package is delivered unchanged to `POST /ingestions` for a pre-registered
+topic. Layer 2 owns canonical IDs and supplies the retrieval APIs that Layer 3 will use;
+Layer 3 must not read Layer 1 package data directly.
+
+Set `GEMINI_API_KEY` to enable evidence-constrained fact extraction during package
+building. Without it, Layer 1 still produces a valid article-and-provenance package.
+
 ## Demo acceptance checklist
 
 1. In the dashboard, select **Replay seeded demo**.
