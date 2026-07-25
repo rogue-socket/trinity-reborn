@@ -1,0 +1,12 @@
+{
+  "schema_version": "1.0",
+  "package_id": "22222222-2222-4222-8222-222222222222",
+  "topic_key": "uk-general-election-2024",
+  "metadata": {"title": "Independent corroboration", "generated_at": "2026-07-25T11:30:00Z"},
+  "sources": [{"source_id": "src-2"}],
+  "articles": [{"article_id": "art-2", "source_id": "src-2", "content": "Labour won 411 seats."}],
+  "evidence": [{"evidence_id": "ev-2", "article_id": "art-2", "excerpt": "Labour won 411 seats.", "start_offset": 0, "end_offset": 21}],
+  "entities": [{"entity_id": "ent-2", "type": "political_party", "name": "labour party"}],
+  "events": [{"event_id": "evt-2", "type": "election_result", "title": "UK general election results", "temporal": {"start": "2024-07-04T22:00:00Z", "precision": "day", "basis": "reported"}, "participant_entity_ids": ["ent-2"], "evidence_ids": ["ev-2"]}],
+  "claims": [{"claim_id": "clm-2", "text": "Labour won 411 seats.", "event_id": "evt-2", "subject_ref": "ent-2", "predicate_candidate": "seats_won", "object_ref_or_value": "411", "temporal_scope": {"start": "2024-07-04", "precision": "day", "basis": "reported"}, "evidence_ids": ["ev-2"]}]
+}

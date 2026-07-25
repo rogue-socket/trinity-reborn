@@ -1,0 +1,9 @@
+{
+  "ingestions": [
+    {"status": "accepted", "created": 4, "matched": 0, "contradictions": 0},
+    {"status": "accepted", "created": 0, "matched": 3, "contradictions": 0},
+    {"status": "accepted", "created": 0, "matched": 1, "contradictions": 1}
+  ],
+  "context": {"entities": 1, "events": 1, "claims": 2, "relationships": 2, "disputes": 1},
+  "raw_export_items": 3
+}

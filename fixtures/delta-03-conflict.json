@@ -1,0 +1,12 @@
+{
+  "schema_version": "1.0",
+  "package_id": "33333333-3333-4333-8333-333333333333",
+  "topic_key": "uk-general-election-2024",
+  "metadata": {"title": "Conflicting update", "generated_at": "2026-07-25T12:30:00Z"},
+  "sources": [{"source_id": "src-3"}],
+  "articles": [{"article_id": "art-3", "source_id": "src-3", "content": "Labour won 410 seats."}],
+  "evidence": [{"evidence_id": "ev-3", "article_id": "art-3", "excerpt": "Labour won 410 seats.", "start_offset": 0, "end_offset": 21}],
+  "entities": [{"entity_id": "ent-3", "type": "political_party", "name": "Labour Party"}],
+  "events": [],
+  "claims": [{"claim_id": "clm-3", "text": "Labour won 410 seats.", "subject_ref": "ent-3", "predicate_candidate": "seats_won", "object_ref_or_value": "410", "temporal_scope": {"start": "2024-07-04", "precision": "day", "basis": "reported"}, "evidence_ids": ["ev-3"]}]
+}

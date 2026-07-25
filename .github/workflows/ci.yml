@@ -1,0 +1,66 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: trinity_reborn
+          POSTGRES_USER: trinity
+          POSTGRES_PASSWORD: trinity
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U trinity -d trinity_reborn"
+          --health-interval 2s
+          --health-timeout 3s
+          --health-retries 15
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
+        with:
+          enable-cache: true
+
+      - name: Install Python and dependencies
+        run: |
+          uv python install 3.14
+          uv sync --locked --group dev
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        run: npm ci --prefix frontend
+
+      - name: Verify database migrations
+        run: |
+          uv run alembic upgrade head
+          uv run alembic check
+
+      - name: Verify backend
+        run: |
+          uv run ruff check backend
+          PYTHONPATH=backend uv run mypy backend/app
+          PYTHONPATH=backend uv run pytest backend/tests -q
+
+      - name: Verify frontend
+        run: |
+          npm run lint --prefix frontend
+          npm run typecheck --prefix frontend
+          npm test --prefix frontend
+          npm run build --prefix frontend
