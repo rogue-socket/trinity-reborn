@@ -1,0 +1,158 @@
+{
+  "topic": {
+    "topic_id": "3f7a1b2c-0001-4a10-9c11-000000000001",
+    "topic_key": "india-student-protests-2026",
+    "display_name": "India student protests over exam leaks",
+    "status": "active"
+  },
+  "summary": {
+    "text": "Student-led protests over alleged examination leaks and recruitment irregularities have grown into a nationwide movement, with a march toward Parliament met by a police response, and government-opposition disagreement over next steps.",
+    "claim_ids": ["clm_001", "clm_002", "clm_004"]
+  },
+  "timeline": [
+    { "event_id": "evt_001", "order": 1, "title": "Exam leak allegations surface", "status": "active" },
+    { "event_id": "evt_002", "order": 2, "title": "Students organize demonstrations", "status": "active" },
+    { "event_id": "evt_003", "order": 3, "title": "March toward Parliament met by police", "status": "active" }
+  ],
+  "entities": [
+    {
+      "entity_id": "ent_001",
+      "type": "community_group",
+      "label": "Student demonstrators",
+      "aliases": ["protesters", "students"],
+      "status": "active"
+    },
+    {
+      "entity_id": "ent_002",
+      "type": "government_agency",
+      "label": "City police",
+      "aliases": ["law enforcement"],
+      "status": "active"
+    },
+    {
+      "entity_id": "ent_003",
+      "type": "government_body",
+      "label": "Education ministry",
+      "aliases": [],
+      "status": "active"
+    },
+    {
+      "entity_id": "ent_004",
+      "type": "political_party",
+      "label": "Opposition coalition",
+      "aliases": [],
+      "status": "active"
+    },
+    {
+      "entity_id": "ent_005",
+      "type": "media_outlet",
+      "label": "Independent news desk",
+      "aliases": ["press", "reporters"],
+      "status": "active"
+    },
+    {
+      "entity_id": "ent_006",
+      "type": "city_or_locality",
+      "label": "Capital city",
+      "aliases": [],
+      "status": "active"
+    }
+  ],
+  "events": [
+    {
+      "event_id": "evt_001",
+      "type": "public_statement",
+      "title": "Exam leak allegations surface",
+      "description": "Reports allege a national entrance exam's questions were leaked before the test date.",
+      "temporal": { "start": "2026-07-10T00:00:00Z", "precision": "day", "basis": "reported" },
+      "participant_entity_ids": ["ent_003"],
+      "location_entity_ids": ["ent_006"],
+      "status": "active"
+    },
+    {
+      "event_id": "evt_002",
+      "type": "public_demonstration",
+      "title": "Students organize demonstrations",
+      "description": "Student groups begin coordinated protests demanding an independent investigation.",
+      "temporal": { "start": "2026-07-15T00:00:00Z", "precision": "day", "basis": "reported" },
+      "participant_entity_ids": ["ent_001"],
+      "location_entity_ids": ["ent_006"],
+      "status": "active"
+    },
+    {
+      "event_id": "evt_003",
+      "type": "public_demonstration",
+      "title": "March toward Parliament met by police",
+      "description": "Thousands march toward Parliament; police use barricades and tear gas to stop the march.",
+      "temporal": { "start": "2026-07-20T10:00:00Z", "precision": "exact", "basis": "reported" },
+      "participant_entity_ids": ["ent_001", "ent_002"],
+      "location_entity_ids": ["ent_006"],
+      "status": "active"
+    }
+  ],
+  "claims": [
+    {
+      "claim_id": "clm_001",
+      "text": "Thousands of students participated in the march toward Parliament.",
+      "event_id": "evt_003",
+      "subject_ref": "ent_001",
+      "epistemic_status": "corroborated",
+      "support_summary": { "source_count": 4, "independent_source_count": 3, "assessment": "corroborated" }
+    },
+    {
+      "claim_id": "clm_002",
+      "text": "Police used tear gas and baton charges to stop the march.",
+      "event_id": "evt_003",
+      "subject_ref": "ent_002",
+      "epistemic_status": "reported",
+      "support_summary": { "source_count": 3, "independent_source_count": 2, "assessment": "corroborated" }
+    },
+    {
+      "claim_id": "clm_003",
+      "text": "The education ministry denies any leak occurred.",
+      "event_id": "evt_001",
+      "subject_ref": "ent_003",
+      "epistemic_status": "disputed",
+      "support_summary": { "source_count": 1, "independent_source_count": 1, "assessment": "attributed, unconfirmed" }
+    },
+    {
+      "claim_id": "clm_004",
+      "text": "The opposition coalition has called for the education minister's resignation.",
+      "event_id": "evt_002",
+      "subject_ref": "ent_004",
+      "epistemic_status": "reported",
+      "support_summary": { "source_count": 2, "independent_source_count": 2, "assessment": "corroborated" }
+    }
+  ],
+  "relationships": [
+    { "relationship_id": "rel_001", "subject_ref": "ent_001", "object_ref": "evt_003", "type": "PARTICIPATED_IN" },
+    { "relationship_id": "rel_002", "subject_ref": "ent_002", "object_ref": "evt_003", "type": "RESPONDED_TO" },
+    { "relationship_id": "rel_003", "subject_ref": "ent_004", "object_ref": "ent_001", "type": "RELATED_TO" }
+  ],
+  "disputes": [
+    {
+      "dispute_id": "dsp_001",
+      "description": "Whether the exam leak actually occurred is contested: students and opposition assert it did, the education ministry denies it.",
+      "related_entity_ids": ["ent_001", "ent_003", "ent_004"],
+      "related_claim_ids": ["clm_003"]
+    }
+  ],
+  "interpretations": [
+    {
+      "interpretation_id": "int_001",
+      "text": "The events reflect broader frustration among young people over accountability and institutional trust.",
+      "labelled": "interpretive"
+    }
+  ],
+  "coverage": {
+    "returned_nodes": 6,
+    "returned_relationships": 3,
+    "omitted_nodes": 0,
+    "truncated": false,
+    "next_cursor": null
+  },
+  "query_hints": {
+    "available_expansions": ["ent_001", "ent_002", "ent_003"],
+    "raw_export_available": true
+  }
+}
