@@ -439,8 +439,17 @@ ARTICLE CONTENT:
 {article.content}"""
 
 
+def _skipped(kind: str, local_id: str, reason: str) -> None:
+    logger.warning("Layer 1 skipped %s %r: %s", kind, local_id, reason)
+
+
 def _normalize_facts(article: Article, payload: dict, sequence: int) -> FactPayload:
-    """Validate one model response and give its local IDs package-wide names."""
+    """Validate one model response and give its local IDs package-wide names.
+
+    A malformed response is still rejected outright, but an individual fact that cites
+    something the model never extracted is dropped on its own so the rest of the
+    article's facts survive.
+    """
     adjusted_payload = dict(payload)
     adjusted_payload["entities"] = [
         {**item, "name": item.get("name", item.get("label"))}
@@ -456,13 +465,18 @@ def _normalize_facts(article: Article, payload: dict, sequence: int) -> FactPayl
     prefix = f"{sequence:03d}"
 
     def ids(items: Sequence[BaseModel], field: str, kind: str) -> dict[str, str]:
-        raw: list[str] = []
-        for item in items:
-            value = getattr(item, field)
-            raw.append(value)
-        if len(set(raw)) != len(raw):
-            raise ValueError(f"duplicate {kind} IDs")
-        return {value: f"{kind}_{prefix}_{index:03d}" for index, value in enumerate(raw, start=1)}
+        """Map each unambiguous local ID to a package-wide name.
+
+        A duplicated ID is left out entirely, so every object claiming it is skipped
+        below rather than being silently merged into whichever one came last.
+        """
+        raw = [getattr(item, field) for item in items]
+        duplicated = {value for value in raw if raw.count(value) > 1}
+        return {
+            value: f"{kind}_{prefix}_{index:03d}"
+            for index, value in enumerate(raw, start=1)
+            if value not in duplicated
+        }
 
     evidence_ids = ids(evidence, "evidence_id", "ev")
     entity_ids = ids(entities, "entity_id", "ent")
@@ -472,54 +486,69 @@ def _normalize_facts(article: Article, payload: dict, sequence: int) -> FactPayl
     reference_ids = entity_ids | event_ids | claim_ids
 
     normalized_evidence: list[Evidence] = []
+    surviving_evidence_ids: dict[str, str] = {}
     for item in evidence:
+        if item.evidence_id not in evidence_ids:
+            continue
         if item.article_id != article.article_id:
-            raise ValueError("invalid evidence reference")
+            _skipped("evidence", item.evidence_id, "cites another article")
+            continue
         if item.end_offset < item.start_offset or item.end_offset > len(article.content):
-            raise ValueError("evidence offsets are outside article content")
+            _skipped("evidence", item.evidence_id, "offsets are outside the article content")
+            continue
         if article.content[item.start_offset:item.end_offset] != item.excerpt:
-            raise ValueError("evidence offsets do not select the excerpt")
+            _skipped("evidence", item.evidence_id, "offsets do not select the excerpt")
+            continue
+        surviving_evidence_ids[item.evidence_id] = evidence_ids[item.evidence_id]
         normalized_evidence.append(
             item.model_copy(update={"evidence_id": evidence_ids[item.evidence_id]})
         )
+    evidence_ids = surviving_evidence_ids
 
-    def remap(values: list[str], mapping: dict[str, str], field: str) -> list[str]:
-        if not all(value in mapping for value in values):
-            raise ValueError(f"invalid {field}")
-        return [mapping[value] for value in values]
+    def remap(values: list[str], mapping: dict[str, str]) -> list[str]:
+        """Keep the references that survived normalization and drop the rest."""
+        return [mapping[value] for value in values if value in mapping]
 
     normalized_entities: list[Entity] = []
     for item in entities:
+        if item.entity_id not in entity_ids:
+            continue
         normalized_entities.append(
             item.model_copy(
                 update={
                     "entity_id": entity_ids[item.entity_id],
-                    "evidence_ids": remap(item.evidence_ids, evidence_ids, "entity evidence_ids"),
+                    "evidence_ids": remap(item.evidence_ids, evidence_ids),
                 }
             )
         )
 
     normalized_events: list[Event] = []
     for item in events:
+        if item.event_id not in event_ids:
+            continue
         normalized_events.append(
             item.model_copy(
                 update={
                     "event_id": event_ids[item.event_id],
-                    "participant_entity_ids": remap(item.participant_entity_ids, entity_ids, "event participants"),
-                    "location_entity_ids": remap(item.location_entity_ids, entity_ids, "event locations"),
-                    "evidence_ids": remap(item.evidence_ids, evidence_ids, "event evidence_ids"),
-                    "related_claim_ids": remap(item.related_claim_ids, claim_ids, "event claim IDs"),
+                    "participant_entity_ids": remap(item.participant_entity_ids, entity_ids),
+                    "location_entity_ids": remap(item.location_entity_ids, entity_ids),
+                    "evidence_ids": remap(item.evidence_ids, evidence_ids),
+                    "related_claim_ids": remap(item.related_claim_ids, claim_ids),
                 }
             )
         )
 
     normalized_claims: list[Claim] = []
     for item in claims:
-        if item.event_id not in event_ids or item.subject_ref not in reference_ids:
-            raise ValueError("invalid claim")
+        if item.claim_id not in claim_ids:
+            continue
         asserted_by = item.asserted_by_entity_id
+        if item.event_id not in event_ids or item.subject_ref not in reference_ids:
+            _skipped("claim", item.claim_id, "cites an event or subject that was not extracted")
+            continue
         if asserted_by is not None and asserted_by not in entity_ids:
-            raise ValueError("invalid asserting entity")
+            _skipped("claim", item.claim_id, "attributes the claim to an entity that was not extracted")
+            continue
         normalized_claims.append(
             item.model_copy(
                 update={
@@ -530,22 +559,25 @@ def _normalize_facts(article: Article, payload: dict, sequence: int) -> FactPayl
                         item.object_ref_or_value, item.object_ref_or_value
                     ),
                     "asserted_by_entity_id": entity_ids[asserted_by] if asserted_by is not None else None,
-                    "evidence_ids": remap(item.evidence_ids, evidence_ids, "claim evidence_ids"),
+                    "evidence_ids": remap(item.evidence_ids, evidence_ids),
                 }
             )
         )
 
     normalized_relationships: list[RelationshipCandidate] = []
     for item in relationships:
+        if item.relationship_id not in relationship_ids:
+            continue
         if item.subject_ref not in reference_ids or item.object_ref not in reference_ids:
-            raise ValueError("invalid relationship")
+            _skipped("relationship", item.relationship_id, "links an object that was not extracted")
+            continue
         normalized_relationships.append(
             item.model_copy(
                 update={
                     "relationship_id": relationship_ids[item.relationship_id],
                     "subject_ref": reference_ids[item.subject_ref],
                     "object_ref": reference_ids[item.object_ref],
-                    "evidence_ids": remap(item.evidence_ids, evidence_ids, "relationship evidence_ids"),
+                    "evidence_ids": remap(item.evidence_ids, evidence_ids),
                 }
             )
         )
@@ -559,12 +591,37 @@ def _normalize_facts(article: Article, payload: dict, sequence: int) -> FactPayl
 
 
 def _validate_for_delivery(package: ResearchPackage) -> ResearchPackage:
-    from app.services.validation import validate_objects
+    """Deliver everything Layer 2 would accept, dropping only the objects it would reject.
+
+    ``validate_objects`` already rejects dependents of a rejected object, so filtering on
+    its report cannot leave a dangling reference behind.
+    """
+    from app.services.validation import LOCAL_TYPES, REQUIRED_FIELDS, validate_objects
 
     result = validate_objects(package.model_dump(mode="json"))
-    if any(item["status"] == "rejected" for item in result.report["object_results"]):
+    rejected = {
+        (item["local_type"], item["local_id"])
+        for item in result.report["object_results"]
+        if item["status"] == "rejected"
+    }
+    if not rejected:
+        return package
+    if result.status == "rejected":
         raise PackageValidationError(result.report)
-    return package
+    retained = {}
+    for collection, required_fields in REQUIRED_FIELDS.items():
+        local_type, id_field = LOCAL_TYPES[collection], required_fields[0]
+        retained[collection] = [
+            item
+            for item in getattr(package, collection)
+            if (local_type, getattr(item, id_field, None)) not in rejected
+        ]
+    logger.warning(
+        "Layer 1 dropped %d object(s) Layer 2 would reject: %s",
+        len(rejected),
+        sorted(f"{local_type}:{local_id}" for local_type, local_id in rejected),
+    )
+    return package.model_copy(update=retained)
 
 
 async def build_full_package(

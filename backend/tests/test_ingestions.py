@@ -36,6 +36,7 @@ from app.models import (
     ProvenanceLink,
     ResolutionDecision,
 )
+from app.policy import CANDIDATE_LIMIT
 
 
 def register_topic(client: TestClient) -> str:
@@ -1308,6 +1309,52 @@ def test_resolves_an_exact_entity_match_within_a_topic() -> None:
     assert entity["support"] == {"package_count": 2, "assessment": "corroborated"}
 
 
+def test_resolves_exact_entity_matches_beyond_the_candidate_window() -> None:
+    names = [f"Bureau Of Example Affairs {index}" for index in range(CANDIDATE_LIMIT + 5)]
+    shared = {
+        "schema_version": "1.0",
+        "sources": [{"source_id": "src-1"}],
+        "articles": [],
+        "evidence": [],
+        "events": [],
+        "claims": [],
+    }
+    with TestClient(app) as client:
+        topic_key = register_topic(client)
+        first_response = client.post(
+            "/ingestions",
+            json={
+                **shared,
+                "package_id": str(uuid.uuid4()),
+                "topic_key": topic_key,
+                "metadata": {"title": "First", "generated_at": "2026-07-25T10:30:00Z"},
+                "entities": [
+                    {"entity_id": f"ent-a-{index}", "type": "organization", "name": name}
+                    for index, name in enumerate(names)
+                ],
+            },
+        )
+        second_response = client.post(
+            "/ingestions",
+            json={
+                **shared,
+                "package_id": str(uuid.uuid4()),
+                "topic_key": topic_key,
+                "metadata": {"title": "Second", "generated_at": "2026-07-25T11:30:00Z"},
+                "entities": [
+                    {"entity_id": f"ent-b-{index}", "type": "organization", "name": name}
+                    for index, name in enumerate(names)
+                ],
+            },
+        )
+
+    assert first_response.status_code == 201
+    assert second_response.status_code == 201
+    assert first_response.json()["summary"]["created"] == len(names)
+    assert second_response.json()["summary"]["created"] == 0
+    assert second_response.json()["summary"]["matched"] == len(names)
+
+
 def test_resolves_an_entity_by_a_preserved_alias() -> None:
     with TestClient(app) as client:
         topic_key = register_topic(client)
@@ -1626,6 +1673,49 @@ def test_only_contradicts_quantities_with_compatible_units_and_scopes() -> None:
             )
         )
     assert len(contradictions) == 1
+
+
+def test_filters_an_open_ended_event_by_time_without_failing() -> None:
+    with TestClient(app) as client:
+        topic_key = register_topic(client)
+        ingestion = client.post(
+            "/ingestions",
+            json={
+                "schema_version": "1.0",
+                "package_id": str(uuid.uuid4()),
+                "topic_key": topic_key,
+                "metadata": {"title": "Open ended", "generated_at": "2026-07-25T10:30:00Z"},
+                "sources": [{"source_id": "src-1"}],
+                "articles": [],
+                "evidence": [],
+                "entities": [{"entity_id": "ent-1", "type": "organization", "name": "Example Group"}],
+                "events": [
+                    {
+                        "event_id": "evt-ongoing",
+                        "type": "meeting",
+                        "title": "Ongoing inquiry",
+                        "temporal": {
+                            "start": "2026-07-20T10:00:00Z",
+                            "end": None,
+                            "precision": "exact",
+                            "basis": "reported",
+                        },
+                        "participant_entity_ids": ["ent-1"],
+                    }
+                ],
+                "claims": [],
+            },
+        )
+        topic_id = ingestion.json()["topic_id"]
+        context = client.get(
+            f"/topics/{topic_id}/context", params={"time_start": "2026-07-01T00:00:00Z"}
+        )
+
+    assert ingestion.status_code == 201
+    assert context.status_code == 200
+    assert [event["temporal"]["start"] for event in context.json()["events"]] == [
+        "2026-07-20T10:00:00Z"
+    ]
 
 
 def test_returns_redacted_topic_context_and_event_time_timeline() -> None:

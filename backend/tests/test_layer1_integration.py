@@ -442,6 +442,142 @@ def test_fact_normalization_rejects_values_layer2_would_reject() -> None:
         )
 
 
+def test_a_dangling_reference_drops_one_fact_not_the_whole_article() -> None:
+    content = "Alice resigned after protests. " + "Context. " * 30
+    article = layer1.ExtractedArticle(
+        url="https://news.google.com/rss/articles/dangling",
+        canonical_url="https://example.com/dangling",
+        title="Alice resigns",
+        publisher="Example News",
+        published_date="2026-07-25T10:00:00Z",
+        body=content,
+        extraction_method="trafilatura",
+        success=True,
+    )
+    excerpt = "Alice resigned"
+    offset = content.index(excerpt)
+
+    def generator(_: layer1.Article) -> dict:
+        return {
+            "evidence": [
+                {
+                    "evidence_id": "ev_local",
+                    "article_id": "art_001",
+                    "excerpt": excerpt,
+                    "start_offset": offset,
+                    "end_offset": offset + len(excerpt),
+                }
+            ],
+            "entities": [
+                {
+                    "entity_id": "ent_alice",
+                    "name": "Alice",
+                    "type": "person",
+                    "evidence_ids": ["ev_local"],
+                }
+            ],
+            "events": [],
+            # Cites an event the model never emitted, which is a routine LLM slip.
+            "claims": [
+                {
+                    "claim_id": "clm_local",
+                    "text": "Alice resigned after protests.",
+                    "evidence_ids": ["ev_local"],
+                    "event_id": "evt_hallucinated",
+                    "subject_ref": "ent_alice",
+                    "predicate_candidate": "resigned",
+                    "object_ref_or_value": "after protests",
+                    "temporal_scope": {
+                        "start": "2026-07-25T00:00:00Z",
+                        "precision": "day",
+                        "basis": "reported",
+                    },
+                    "asserted_by_entity_id": None,
+                    "epistemic_status": "reported",
+                }
+            ],
+            "relationships": [],
+        }
+
+    package = asyncio.run(
+        layer1.build_full_package(
+            layer1.PackageBuildRequest(topic_key="test-topic", articles=[article]),
+            fact_generator=generator,
+        )
+    )
+
+    assert [entity.name for entity in package.entities] == ["Alice"]
+    assert len(package.evidence) == 1
+    assert package.claims == []
+
+
+def test_one_rejected_object_is_dropped_rather_than_failing_the_package() -> None:
+    content = "Alice resigned after protests. " + "Context. " * 30
+    article = layer1.ExtractedArticle(
+        url="https://news.google.com/rss/articles/partial",
+        canonical_url="https://example.com/partial",
+        title="Alice resigns",
+        publisher="Example News",
+        published_date="2026-07-25T10:00:00Z",
+        body=content,
+        extraction_method="trafilatura",
+        success=True,
+    )
+    excerpt = "Alice resigned"
+    offset = content.index(excerpt)
+
+    def generator(_: layer1.Article) -> dict:
+        return {
+            "evidence": [
+                {
+                    "evidence_id": "ev_local",
+                    "article_id": "art_001",
+                    "excerpt": excerpt,
+                    "start_offset": offset,
+                    "end_offset": offset + len(excerpt),
+                }
+            ],
+            "entities": [
+                {
+                    "entity_id": "ent_alice",
+                    "name": "Alice",
+                    "type": "person",
+                    "evidence_ids": ["ev_local"],
+                },
+                {
+                    "entity_id": "ent_ministry",
+                    "name": "Example Ministry",
+                    "type": "government_body",
+                    "evidence_ids": ["ev_local"],
+                },
+            ],
+            "events": [],
+            "claims": [],
+            # LOCATED_AT requires an event subject, so this one relationship is rejected.
+            "relationships": [
+                {
+                    "relationship_id": "rel_bad",
+                    "subject_ref": "ent_alice",
+                    "object_ref": "ent_ministry",
+                    "source_relation_label": "located at",
+                    "evidence_ids": ["ev_local"],
+                    "extraction_confidence": 0.9,
+                }
+            ],
+        }
+
+    package = asyncio.run(
+        layer1.build_full_package(
+            layer1.PackageBuildRequest(topic_key="test-topic", articles=[article]),
+            fact_generator=generator,
+        )
+    )
+
+    assert sorted(entity.name for entity in package.entities) == ["Alice", "Example Ministry"]
+    assert len(package.evidence) == 1
+    assert package.relationships == []
+
+
 def test_invalid_model_output_is_excluded_without_invalidating_the_package() -> None:
     article = layer1.ExtractedArticle(
         **_article(

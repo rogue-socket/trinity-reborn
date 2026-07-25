@@ -1,0 +1,158 @@
+{
+  "schema_version": "1.0",
+  "package_id": "aaaaaaaa-0001-4a10-9c11-000000000001",
+  "topic_key": "india-student-protests-2026",
+  "metadata": {
+    "title": "Initial reporting",
+    "generated_at": "2026-03-02T09:00:00Z"
+  },
+  "sources": [
+    {
+      "source_id": "src-d1"
+    }
+  ],
+  "articles": [
+    {
+      "article_id": "art-d1",
+      "source_id": "src-d1",
+      "content": "An exam paper leaked before the national entrance test, student groups said on Monday. Organisers announced demonstrations across the capital city for the following week. The education ministry has not commented on the allegation."
+    }
+  ],
+  "evidence": [
+    {
+      "evidence_id": "ev-d1-leak",
+      "article_id": "art-d1",
+      "excerpt": "An exam paper leaked before the national entrance test",
+      "start_offset": 0,
+      "end_offset": 54
+    },
+    {
+      "evidence_id": "ev-d1-demos",
+      "article_id": "art-d1",
+      "excerpt": "Organisers announced demonstrations across the capital city",
+      "start_offset": 87,
+      "end_offset": 146
+    }
+  ],
+  "entities": [
+    {
+      "entity_id": "ent-d1-students",
+      "type": "community_group",
+      "name": "Student demonstrators"
+    },
+    {
+      "entity_id": "ent-d1-ministry",
+      "type": "government_body",
+      "name": "Education ministry"
+    },
+    {
+      "entity_id": "ent-d1-city",
+      "type": "city_or_locality",
+      "name": "Capital city"
+    }
+  ],
+  "events": [
+    {
+      "event_id": "evt-d1-allegations",
+      "type": "public_statement",
+      "title": "Exam leak allegations surface",
+      "temporal": {
+        "start": "2026-03-02T09:00:00Z",
+        "precision": "day",
+        "basis": "reported"
+      },
+      "participant_entity_ids": [
+        "ent-d1-students"
+      ],
+      "location_entity_ids": [],
+      "evidence_ids": [
+        "ev-d1-leak"
+      ]
+    },
+    {
+      "event_id": "evt-d1-organising",
+      "type": "public_demonstration",
+      "title": "Students organize demonstrations",
+      "temporal": {
+        "start": "2026-03-03T18:00:00Z",
+        "precision": "day",
+        "basis": "reported"
+      },
+      "participant_entity_ids": [
+        "ent-d1-students"
+      ],
+      "location_entity_ids": [
+        "ent-d1-city"
+      ],
+      "evidence_ids": [
+        "ev-d1-demos"
+      ]
+    }
+  ],
+  "claims": [
+    {
+      "claim_id": "clm-d1-leak",
+      "text": "An exam paper leaked before the national entrance test.",
+      "event_id": "evt-d1-allegations",
+      "subject_ref": "ent-d1-ministry",
+      "predicate_candidate": "exam_leak_occurred",
+      "object_ref_or_value": "true",
+      "temporal_scope": {
+        "start": "2026-03-01",
+        "precision": "day",
+        "basis": "reported"
+      },
+      "asserted_by_entity_id": "ent-d1-students",
+      "epistemic_status": "reported",
+      "evidence_ids": [
+        "ev-d1-leak"
+      ]
+    },
+    {
+      "claim_id": "clm-d1-demos",
+      "text": "Student groups organised demonstrations across the capital city.",
+      "event_id": "evt-d1-organising",
+      "subject_ref": "ent-d1-students",
+      "predicate_candidate": "organised_demonstrations",
+      "object_ref_or_value": "capital city",
+      "temporal_scope": {
+        "start": "2026-03-03",
+        "precision": "day",
+        "basis": "reported"
+      },
+      "epistemic_status": "reported",
+      "evidence_ids": [
+        "ev-d1-demos"
+      ]
+    }
+  ],
+  "relationships": [
+    {
+      "relationship_id": "rel-d1-participated",
+      "subject_ref": "ent-d1-students",
+      "object_ref": "evt-d1-allegations",
+      "source_relation_label": "participated in",
+      "evidence_ids": [
+        "ev-d1-leak"
+      ]
+    },
+    {
+      "relationship_id": "rel-d1-organized",
+      "subject_ref": "ent-d1-students",
+      "object_ref": "evt-d1-organising",
+      "source_relation_label": "organized",
+      "evidence_ids": [
+        "ev-d1-demos"
+      ]
+    },
+    {
+      "relationship_id": "rel-d1-located",
+      "subject_ref": "evt-d1-organising",
+      "object_ref": "ent-d1-city",
+      "source_relation_label": "located at",
+      "evidence_ids": [
+        "ev-d1-demos"
+      ]
+    }
+  ]
+}

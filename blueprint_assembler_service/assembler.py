@@ -3,6 +3,7 @@
 import hashlib
 import json
 import logging
+import re
 from collections import Counter, defaultdict
 from datetime import UTC, datetime
 from pathlib import Path
@@ -125,16 +126,43 @@ def _canonical_hash(context: dict[str, Any], world: World, characters: dict[str,
     return hashlib.sha256(json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8")).hexdigest()
 
 
-def _fictional_event_label(title: str, entities: list[dict[str, Any]], world: World) -> str:
-    label = title
-    replacements = [
-        (str(entity.get("label", "")), world.entity_map[entity["entity_id"]].fictional_name)
-        for entity in entities
-        if entity.get("entity_id") in world.entity_map and entity.get("label")
+def _fictionalize(text: str, entities: list[dict[str, Any]], world: World) -> str:
+    """Swap known entity labels in Layer 2 prose for their fictional counterparts.
+
+    This reduces exposure rather than eliminating it: a real noun that Layer 1 never
+    extracted as an entity has no mapping and survives. Prose is only carried over where
+    the substance is the point, such as the central conflict.
+    """
+    replacements = sorted(
+        (
+            (str(entity["label"]), world.entity_map[entity["entity_id"]].fictional_name)
+            for entity in entities
+            if entity.get("entity_id") in world.entity_map and entity.get("label")
+        ),
+        key=lambda item: len(item[0]),
+        reverse=True,
+    )
+    for source_name, fictional_name in replacements:
+        text = re.sub(re.escape(source_name), fictional_name, text, flags=re.IGNORECASE)
+    return text
+
+
+def _fictional_event_label(event: dict[str, Any], world: World) -> str:
+    """Name the event from its fictional participants and its generic type.
+
+    The real title is deliberately not used. It routinely carries real place, policy,
+    and organisation names that appear nowhere in the entity list, so replacing known
+    entity labels inside it cannot make it safe to publish.
+    """
+    kind = str(event.get("type", "")).replace("_", " ").strip() or "development"
+    participants = [
+        world.entity_map[entity_id].fictional_name
+        for entity_id in event.get("participant_entity_ids", [])
+        if entity_id in world.entity_map
     ]
-    for source_name, fictional_name in sorted(replacements, key=lambda item: len(item[0]), reverse=True):
-        label = label.replace(source_name, fictional_name)
-    return label
+    if participants:
+        return f"{kind.capitalize()}: {', '.join(participants)}"
+    return kind.capitalize()
 
 
 def _epistemic_note(claims: list[dict[str, Any]]) -> str:
@@ -184,7 +212,7 @@ def assemble_blueprint(topic_id: str) -> Blueprint:
         timeline.append(
             TimelineEntry(
                 event_id=event_id,
-                fictional_label=_fictional_event_label(str(event.get("title", "")), context["entities"], world),
+                fictional_label=_fictional_event_label(event, world),
                 order=int(timeline_item.get("order", 0)),
                 status=str(event.get("status", "")),
                 participant_character_ids=participant_ids,
@@ -197,9 +225,10 @@ def assemble_blueprint(topic_id: str) -> Blueprint:
         central_conflict = str(disputes[0].get("description", ""))
     else:
         central_conflict = str(context.get("summary", {}).get("text", ""))[:200]
+    central_conflict = _fictionalize(central_conflict, context["entities"], world)
     disputed_threads = [
         DisputedThread(
-            description=str(dispute.get("description", "")),
+            description=_fictionalize(str(dispute.get("description", "")), context["entities"], world),
             related_character_ids=[
                 character_id
                 for entity_id in dispute.get("related_entity_ids", [])

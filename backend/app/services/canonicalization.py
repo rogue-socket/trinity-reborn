@@ -552,8 +552,8 @@ def _matching_entity(session: Session, topic_id: object, mention: EntityMention)
     return next(
         (
             candidate
-            for candidate in _entity_candidates(session, topic_id, entity_type)
-            if incoming_names & _canonical_entity_names(session, candidate)
+            for candidate, names in _entity_name_index(session, topic_id, entity_type)
+            if incoming_names & names
         ),
         None,
     )
@@ -567,12 +567,9 @@ def _possible_entity_match(
     entity_type = canonical_entity_type(mention.source_type)
     if not incoming_token_sets:
         return None, 0.0
-    candidates = _entity_candidates(session, topic_id, entity_type)
     scored = []
-    for candidate in candidates:
-        candidate_token_sets = [
-            set(name.split()) for name in _canonical_entity_names(session, candidate) if name
-        ]
+    for candidate, names in _entity_name_index(session, topic_id, entity_type):
+        candidate_token_sets = [set(name.split()) for name in names if name]
         score = max(
             (
                 len(incoming & existing) / len(incoming | existing)
@@ -593,23 +590,40 @@ def _possible_entity_match(
     )
 
 
-def _entity_candidates(
+def _entity_name_index(
     session: Session, topic_id: object, entity_type: str
-) -> list[CanonicalEntity]:
-    return list(
-        session.scalars(
-        select(CanonicalEntity)
+) -> list[tuple[CanonicalEntity, set[str]]]:
+    """Every canonical entity of this type in the topic, with all names it answers to.
+
+    Retrieval is keyed on names rather than an arbitrary window of the topic, so a
+    match is never missed just because the counterpart sorts late by canonical id.
+    """
+    rows = session.execute(
+        select(CanonicalEntity, EntityMention)
         .join(LocalIdMapping, CanonicalEntity.id == LocalIdMapping.canonical_id)
         .join(RawPackage, LocalIdMapping.raw_package_id == RawPackage.id)
+        .outerjoin(
+            EntityMention,
+            and_(
+                EntityMention.raw_package_id == LocalIdMapping.raw_package_id,
+                EntityMention.local_id == LocalIdMapping.local_id,
+            ),
+        )
         .where(
             RawPackage.topic_id == topic_id,
             CanonicalEntity.entity_type == entity_type,
+            LocalIdMapping.local_type == "entity",
         )
-        .distinct()
         .order_by(CanonicalEntity.id)
-        .limit(CANDIDATE_LIMIT)
-        )
     )
+    index: dict[Any, tuple[CanonicalEntity, set[str]]] = {}
+    for entity, mention in rows:
+        _, names = index.setdefault(
+            entity.id, (entity, {_normalized(entity.canonical_label)})
+        )
+        if mention is not None:
+            names.update(_entity_mention_names(mention))
+    return list(index.values())
 
 
 def _entity_mention_names(mention: EntityMention) -> set[str]:
@@ -618,27 +632,6 @@ def _entity_mention_names(mention: EntityMention) -> set[str]:
         for value in [mention.label, *mention.payload.get("aliases", [])]
         if isinstance(value, str) and (normalized := _normalized(value))
     }
-
-
-def _canonical_entity_names(
-    session: Session, entity: CanonicalEntity
-) -> set[str]:
-    mentions = session.scalars(
-        select(EntityMention)
-        .join(
-            LocalIdMapping,
-            and_(
-                LocalIdMapping.raw_package_id == EntityMention.raw_package_id,
-                LocalIdMapping.local_type == "entity",
-                LocalIdMapping.local_id == EntityMention.local_id,
-            ),
-        )
-        .where(LocalIdMapping.canonical_id == entity.id)
-    )
-    names = {_normalized(entity.canonical_label)}
-    for mention in mentions:
-        names.update(_entity_mention_names(mention))
-    return names
 
 
 def _matching_event(

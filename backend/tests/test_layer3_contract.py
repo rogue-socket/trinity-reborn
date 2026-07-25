@@ -77,6 +77,24 @@ def test_disputes_carry_their_narrative_payload(context: dict) -> None:
         assert set(dispute["related_claim_ids"]).issubset(claim_ids)
 
 
+def test_dispute_descriptions_quote_the_conflicting_claims(context: dict) -> None:
+    """The blueprint uses this verbatim as the central conflict, so it must read as prose.
+
+    Internal resolution rationales such as "Same structured subject, predicate, and
+    temporal scope with incompatible values." are accurate but unusable in a story.
+    """
+    claim_texts = {claim["claim_id"]: claim["text"] for claim in context["claims"]}
+    for dispute in context["disputes"]:
+        related = [
+            claim_texts[claim_id].strip().rstrip(".")
+            for claim_id in dispute["related_claim_ids"]
+        ]
+        assert related, "a dispute with no claims cannot be described"
+        assert any(text in dispute["description"] for text in related), (
+            f"description does not mention what is disputed: {dispute['description']!r}"
+        )
+
+
 def test_claims_name_their_subject(context: dict) -> None:
     entity_ids = {entity["entity_id"] for entity in context["entities"]}
     for claim in context["claims"]:

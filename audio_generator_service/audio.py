@@ -154,7 +154,7 @@ def infer_voice(character: dict[str, Any]) -> VoiceInference:
 
 def _voices() -> list[dict[str, Any]]:
     global _voices_cache
-    if _voices_cache is not None:
+    if _voices_cache:
         return _voices_cache
     try:
         response = httpx.get(f"{ELEVENLABS_BASE_URL}/v2/voices", headers=_elevenlabs_headers(), params={"page_size": 100}, timeout=20.0)
@@ -162,9 +162,9 @@ def _voices() -> list[dict[str, Any]]:
         _voices_cache = list(response.json().get("voices", []))
         return _voices_cache
     except (httpx.HTTPError, ValueError, AttributeError) as exc:
+        # Left uncached so a transient failure does not pin every later character to the fallback voice.
         logger.warning("Could not fetch ElevenLabs voice list; using fallback voice: %s", exc)
-        _voices_cache = []
-        return _voices_cache
+        return []
 
 
 def select_voice(inference: VoiceInference) -> str:

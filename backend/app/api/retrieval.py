@@ -26,7 +26,6 @@ from app.models import (
     ProvenanceLink,
     RawPackage,
     ResolutionDecision,
-    RelationshipAssertion,
     RelationshipStatusHistory,
     Topic,
     TopicAnnotation,
@@ -84,6 +83,21 @@ def _topic_entity_ids(
     return entity_ids
 
 
+def _asserting_entity_id(session: Session, mention: ClaimMention | None) -> str | None:
+    """Resolve who advanced the claim, which is what a dispute needs to name its sides."""
+    local_id = mention.payload.get("asserted_by_entity_id") if mention is not None else None
+    if local_id is None or mention is None:
+        return None
+    canonical_id = session.scalar(
+        select(LocalIdMapping.canonical_id).where(
+            LocalIdMapping.raw_package_id == mention.raw_package_id,
+            LocalIdMapping.local_type == "entity",
+            LocalIdMapping.local_id == local_id,
+        )
+    )
+    return str(canonical_id) if canonical_id is not None else None
+
+
 def _claim_items(session: Session, topic_id: uuid.UUID, as_of: datetime | None) -> list[dict]:
     claims = list(session.scalars(select(Claim).where(Claim.topic_id == topic_id)))
     statuses = {claim.id: claim.status for claim in claims}
@@ -118,6 +132,7 @@ def _claim_items(session: Session, topic_id: uuid.UUID, as_of: datetime | None) 
             .order_by(ClaimMention.id)
             .limit(1)
         )
+        asserted_by = _asserting_entity_id(session, mention)
         items.append({
             "claim_id": str(claim.id),
             "text": claim.original_text,
@@ -129,6 +144,7 @@ def _claim_items(session: Session, topic_id: uuid.UUID, as_of: datetime | None) 
                 if assertion is not None and assertion.subject_type == "entity"
                 else None
             ),
+            "asserted_by": asserted_by,
             "temporal": (
                 assertion.temporal_json
                 if assertion
@@ -271,26 +287,25 @@ def _annotations(session: Session, topic_id: uuid.UUID, kind: str, as_of: dateti
     ]
 
 
-def _dispute_description(session: Session, relationship_id: uuid.UUID, status: str) -> str:
-    """Prefer the assertion that argued for the effective status; it explains the contradiction best."""
-    assertions = list(
-        session.scalars(
-            select(RelationshipAssertion)
-            .where(RelationshipAssertion.relationship_id == relationship_id)
-            .order_by(RelationshipAssertion.confidence.desc(), RelationshipAssertion.id)
-        )
-    )
-    for assertion in assertions:
-        if assertion.status == status:
-            return assertion.rationale
-    return assertions[0].rationale if assertions else "Claims about the same subject disagree."
+def _dispute_description(claim_texts: list[str]) -> str:
+    """Describe what is in dispute, not why the pipeline flagged it.
+
+    Layer 3 renders this verbatim as a story's central conflict, so the resolution
+    rationale behind the CONTRADICTS edge is the wrong thing to hand over.
+    """
+    quoted = [f"\u201c{text.strip().rstrip('.')}\u201d" for text in claim_texts if text.strip()]
+    if len(quoted) >= 2:
+        return f"Accounts conflict: {quoted[0]} versus {quoted[1]}."
+    if quoted:
+        return f"Accounts conflict over this report: {quoted[0]}."
+    return "Claims about the same subject disagree."
 
 
 def _disputes(
-    session: Session,
     relationships: list[GraphRelationship],
     statuses: dict[uuid.UUID, str],
-    claim_subjects: dict[str, str | None],
+    claim_parties: dict[str, set[str]],
+    claim_texts: dict[str, str],
     visible_entity_ids: set[str],
 ) -> list[dict]:
     """Layer 3 turns each contradiction into a plot thread, so it needs prose and the entities involved."""
@@ -308,15 +323,18 @@ def _disputes(
         ]
         related_entity_ids = sorted(
             {
-                subject
+                party
                 for claim_id in related_claim_ids
-                if (subject := claim_subjects.get(claim_id)) is not None and subject in visible_entity_ids
+                for party in claim_parties.get(claim_id, set())
+                if party in visible_entity_ids
             }
         )
         disputes.append(
             {
                 "dispute_id": str(relationship.id),
-                "description": _dispute_description(session, relationship.id, statuses[relationship.id]),
+                "description": _dispute_description(
+                    [claim_texts[claim_id] for claim_id in related_claim_ids if claim_id in claim_texts]
+                ),
                 "status": statuses[relationship.id],
                 "related_entity_ids": related_entity_ids,
                 "related_claim_ids": related_claim_ids,
@@ -343,7 +361,7 @@ def _in_time_range(
         return False
     scope_start = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
     scope_end = datetime.fromisoformat(
-        str(temporal.get("end", value)).replace("Z", "+00:00")
+        str(temporal.get("end") or value).replace("Z", "+00:00")
     )
     return (time_start is None or scope_end >= time_start) and (
         time_end is None or scope_start <= time_end
@@ -564,10 +582,17 @@ def get_topic_context(
         for order, item in enumerate(returned_events, start=1)
     ]
     disputes = _disputes(
-        session,
         relationships,
         relationship_statuses,
-        {item["claim_id"]: item["subject_ref"] for item in claim_items},
+        {
+            item["claim_id"]: {
+                party
+                for party in (item["subject_ref"], item["asserted_by"])
+                if party is not None
+            }
+            for item in claim_items
+        },
+        {item["claim_id"]: item["text"] for item in claim_items},
         {item["entity_id"] for item in returned_entities},
     )
     interpretations = [
