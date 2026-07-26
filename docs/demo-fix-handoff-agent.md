@@ -24,9 +24,9 @@ Verification baseline after these changes:
 ```bash
 docker compose up -d db
 uv run alembic upgrade head
-PYTHONPATH=backend uv run pytest backend/tests -q   # expected: 78 passed
+PYTHONPATH=. uv run pytest backend -q   # expected: 78 passed
 uv run ruff check backend audio_generator_service blueprint_assembler_service
-uv run mypy backend/app
+uv run mypy backend
 ```
 
 ---
@@ -35,16 +35,16 @@ uv run mypy backend/app
 
 | Path | Change |
 |------|--------|
-| `backend/app/services/canonicalization.py` | Entity candidate retrieval rewritten; `_canonical_entity_names` removed |
-| `backend/app/api/retrieval.py` | Null temporal end; dispute prose; `asserted_by` on claims; dispute parties |
-| `backend/app/services/layer1.py` | Partial delivery + per-object fact skip |
-| `audio_generator_service/audio.py` | Voice list cache no longer stores failures |
-| `blueprint_assembler_service/assembler.py` | Synthesized event labels; prose fictionalization helper |
+| `backend/layer2/services/canonicalization.py` | Entity candidate retrieval rewritten; `_canonical_entity_names` removed |
+| `backend/layer2/api/retrieval.py` | Null temporal end; dispute prose; `asserted_by` on claims; dispute parties |
+| `backend/layer1/service.py` | Partial delivery + per-object fact skip |
+| `backend/layer3/audio_generator_service/audio.py` | Voice list cache no longer stores failures |
+| `backend/layer3/blueprint_assembler_service/assembler.py` | Synthesized event labels; prose fictionalization helper |
 | `fixtures/demo/*` | New richer demo corpus (does **not** replace `fixtures/` golden regression) |
-| `backend/tests/test_ingestions.py` | Candidate window + open-ended event tests |
-| `backend/tests/test_layer1_integration.py` | Partial delivery + dangling-ref tests |
-| `backend/tests/test_layer3_contract.py` | Dispute description must quote claims |
-| `backend/tests/test_layer3_pipeline.py` | Title leak assertion + demo corpus ensemble tests |
+| `backend/test_ingestions.py` | Candidate window + open-ended event tests |
+| `backend/layer1/tests/test_layer1_integration.py` | Partial delivery + dangling-ref tests |
+| `backend/layer3/tests/test_layer3_contract.py` | Dispute description must quote claims |
+| `backend/layer3/tests/test_layer3_pipeline.py` | Title leak assertion + demo corpus ensemble tests |
 
 **Not committed / not part of this fix set:** untracked `AGENTS.md` (repo bootstrap; leave alone unless asked).
 
@@ -64,11 +64,11 @@ uv run mypy backend/app
 - Builds `{entity_id → (entity, set of normalized names)}` including canonical label and all mention aliases.
 - `_matching_entity` / `_possible_entity_match` consume that index (no arbitrary row limit on retrieval).
 
-**Note:** `CANDIDATE_LIMIT` remains in `policy.py` and is still used for other candidate queries (claims, events, etc.). Only entity name matching was unblocked.
+**Current status:** the reconciliation policy is now `exhaustive-v3`. Deterministic event, claim, and relationship matching no longer stop at an arbitrary candidate window.
 
 **Test:** `test_resolves_exact_entity_matches_beyond_the_candidate_window` in `test_ingestions.py`.
 
-**Still open under this area:** Event / claim / relationship candidate paths still use `.limit(CANDIDATE_LIMIT)`. Same class of bug can recur for those object types at scale. Not demo-blocking for the new corpus.
+**Resolved in the current implementation:** deterministic event, claim, and relationship candidate scans now evaluate the full applicable set.
 
 ---
 
@@ -92,9 +92,9 @@ uv run mypy backend/app
 
 **Fix:** Cache only non-empty success. On failure return `[]` without writing the cache. Treat empty cache as “not ready” (`if _voices_cache:`).
 
-**File:** `audio_generator_service/audio.py` → `_voices()`.
+**File:** `backend/layer3/audio_generator_service/audio.py` → `_voices()`.
 
-**Test gap:** No automated test file for audio service yet; verified with a mocked `httpx.get` probe. Adding a unit test under `backend/tests/` or a service-local test is still open.
+**Test gap:** No automated test file for audio service yet; verified with a mocked `httpx.get` probe. Adding a unit test under `backend/` or a service-local test is still open.
 
 ---
 
@@ -204,14 +204,14 @@ Design constraints discovered while building:
 |-----|------------|
 | A Narrate / timeouts | `DEMO_MODE` env; `_post(..., timeout=client.timeout)`; documented in README / `.env.example` |
 | B Topic pagination | `GET /topics?limit=&offset=` + `X-Total-Count`; dashboard uses `limit=50`; `display_name` on topic responses; `scripts/purge_test_topics.sql` |
-| C Artefact dirs | Shared `artifact_paths.py`; all Layer 3 `config.py` files use it |
+| C Artefact dirs | Shared `backend/shared/artifact_paths.py`; all Layer 3 `config.py` files use it |
 | D Demo noun scrub | `fixtures/demo` claim/evidence prose no longer uses Parliament / national-entrance wording; pipeline deny-list extended |
 
-### Gap E — Event / claim candidate limits still truncate `[should fix]`
+### Gap E — Event / claim candidate limits `[resolved]`
 
-Same pattern as 3.1 for `_contradicted_claim`, event matching, etc. (`CANDIDATE_LIMIT = 10`). Demo corpus is small enough; large live L1 packages can miss contradictions/matches.
+This was resolved by the `exhaustive-v3` reconciliation policy: event matching and structured-claim contradiction/progression matching scan every applicable candidate before deciding.
 
-**Work:** Name/structure-keyed queries or raise limit with tests mirroring `test_resolves_exact_entity_matches_beyond_the_candidate_window`.
+**Verification:** `test_canonicalization_windows.py` creates more candidates than the legacy window and confirms that the later matching event, contradiction, and progression are found.
 
 ---
 
@@ -219,7 +219,7 @@ Same pattern as 3.1 for `_contradicted_claim`, event matching, etc. (`CANDIDATE_
 
 Earlier review: mid-handler `session.commit()` can release transaction-scoped advisory locks before reconciliation finishes, weakening same-topic mutual exclusion.
 
-**Where:** `backend/app/api/ingestions.py` (+ any nested commits in materialization).
+**Where:** `backend/layer2/api/ingestions.py` (+ any nested commits in materialization).
 
 **Work:** Hold one transaction for the critical section, or use session-level locks. Add/extend `test_serializes_concurrent_same_topic_entity_ingestion` under load.
 
@@ -243,7 +243,7 @@ Copy from `.env.example`. Do not commit secrets.
 ### Gap H — Golden UK fixtures vs PRD fixture mismatch `[someday / product]`
 
 - `fixtures/` + `test_golden_demo.py` = UK election reconciliation golden.
-- `prds/fixture-topic-context.json` = India protests shape Layer 3 contracts against.
+- `docs/prds/fixture-topic-context.json` = India protests shape Layer 3 contracts against.
 - `fixtures/demo/` now implements the India shape as ingestible packages.
 
 Do **not** silently replace the UK golden without regenerating `fixtures/expected/*` and updating golden demo tests. Prefer keeping both.
@@ -271,15 +271,15 @@ Earlier analysis flagged frontend `inspectNode` / `replayDemo` edge cases. Not t
 # Terminal A — Layer 2
 docker compose up -d db
 uv run alembic upgrade head
-PYTHONPATH=backend uv run uvicorn app.main:app --reload --port 8000
+PYTHONPATH=. uv run uvicorn backend.main:app --reload --port 8000
 
 # Seed demo topic (example)
 # POST /topics with fixtures/demo/topic.json (unique topic_key if re-running)
 # POST /ingestions for delta-01, delta-02, delta-03 in order
 
 # Terminal B+ — Layer 3 (requires .env)
-uv run uvicorn world_builder_service.main:app --port 8001
-uv run uvicorn blueprint_assembler_service.main:app --port 8002
+uv run uvicorn backend.layer3.world_builder_service.main:app --port 8001
+uv run uvicorn backend.layer3.blueprint_assembler_service.main:app --port 8002
 # … story 8003, translator 8004, audio 8005, orchestrator 8006
 
 # Then POST orchestrator /run with topic_id

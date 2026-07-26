@@ -2,7 +2,7 @@
 
 **Audit date:** 2026-07-25  
 **Scope:** Current working tree in `trinity-reborn`  
-**Requirements baseline:** `prds/current-affairs-knowledge-graph-layer.md`
+**Requirements baseline:** `docs/prds/current-affairs-knowledge-graph-layer.md`
 
 ## 1. Executive assessment
 
@@ -22,7 +22,7 @@ The verified implementation passes 45 backend tests and 3 frontend acceptance te
 
 ## 2. Audit basis and limitations
 
-The project instructions identify `prds/Current Affairs Knowledge Graph Layer PRD.pdf` as the source of truth, but that PDF is not present in the workspace or Git tree. The available requirements artifact is the Markdown restatement at `prds/current-affairs-knowledge-graph-layer.md`; this audit uses its current working-tree contents, including the uncommitted Layer 1 and Layer 3 integration-contract additions.
+The project instructions identify `prds/Current Affairs Knowledge Graph Layer PRD.pdf` as the source of truth, but that PDF is not present in the workspace or Git tree. The available requirements artifact is the Markdown restatement at `docs/prds/current-affairs-knowledge-graph-layer.md`; this audit uses its current working-tree contents, including the uncommitted Layer 1 and Layer 3 integration-contract additions.
 
 The audit covered:
 
@@ -52,10 +52,10 @@ Implemented:
 
 Primary evidence:
 
-- `backend/app/main.py`
-- `backend/app/db.py`
+- `backend/main.py`
+- `backend/shared/db.py`
 - `compose.yaml`
-- `migrations/versions/`
+- `backend/layer2/migrations/versions/`
 - `frontend/`
 - `README.md`
 
@@ -73,9 +73,9 @@ Implemented:
 
 Primary evidence:
 
-- `backend/app/api/topics.py`
-- `backend/app/models.py`: `Topic`, `TopicLifecycleTransition`
-- `backend/tests/test_topics.py`
+- `backend/layer2/api/topics.py`
+- `backend/layer2/models.py`: `Topic`, `TopicLifecycleTransition`
+- `backend/test_topics.py`
 
 ### 3.3 Layer 1 package intake and immutable storage
 
@@ -94,11 +94,11 @@ Implemented:
 
 Primary evidence:
 
-- `backend/app/api/ingestions.py`
-- `backend/app/contracts/layer1.py`
-- `backend/app/models.py`: `RawPackage`, `RejectedPackage`, `IngestionRun`
+- `backend/layer2/api/ingestions.py`
+- `backend/layer2/contracts/layer1.py`
+- `backend/layer2/models.py`: `RawPackage`, `RejectedPackage`, `IngestionRun`
 - migrations `6b5bd102e9f1`, `9d42be5170a3`, `b4c3d2e1f0a9`, and `9ae431b75c5d`
-- ingestion and concurrency tests in `backend/tests/test_ingestions.py`
+- ingestion and concurrency tests in `backend/test_ingestions.py`
 
 ### 3.4 Object validation and source-derived storage
 
@@ -118,9 +118,9 @@ Implemented:
 
 Primary evidence:
 
-- `backend/app/services/validation.py`
-- `backend/app/services/mentions.py`
-- validation and provenance tests in `backend/tests/test_ingestions.py`
+- `backend/layer2/services/validation.py`
+- `backend/layer2/services/mentions.py`
+- validation and provenance tests in `backend/test_ingestions.py`
 
 ### 3.5 Canonical graph and reconciliation
 
@@ -143,10 +143,10 @@ Implemented:
 
 Primary evidence:
 
-- `backend/app/services/canonicalization.py`
-- `backend/app/models.py`
+- `backend/layer2/services/canonicalization.py`
+- `backend/layer2/models.py`
 - migrations `1a7fdbd3c310`, `a8a8205e2fe2`, and `ce6ac1db7402`
-- reconciliation tests in `backend/tests/test_ingestions.py`
+- reconciliation tests in `backend/test_ingestions.py`
 
 ### 3.6 Provenance and explainability
 
@@ -162,9 +162,9 @@ Implemented:
 
 Primary evidence:
 
-- `ProvenanceLink`, `ResolutionDecision`, `LocalIdMapping`, and `ConfidenceAssessment` in `backend/app/models.py`
-- `_map_object` in `backend/app/services/canonicalization.py`
-- `GET /ingestions/{ingestion_id}` in `backend/app/api/retrieval.py`
+- `ProvenanceLink`, `ResolutionDecision`, `LocalIdMapping`, and `ConfidenceAssessment` in `backend/layer2/models.py`
+- `_map_object` in `backend/layer2/services/canonicalization.py`
+- `GET /ingestions/{ingestion_id}` in `backend/layer2/api/retrieval.py`
 
 ### 3.7 Layer 3 retrieval
 
@@ -182,9 +182,9 @@ Implemented:
 
 Primary evidence:
 
-- `backend/app/api/retrieval.py`
-- retrieval and redaction tests in `backend/tests/test_ingestions.py`
-- golden response assertions in `backend/tests/test_golden_demo.py`
+- `backend/layer2/api/retrieval.py`
+- retrieval and redaction tests in `backend/test_ingestions.py`
+- golden response assertions in `backend/test_golden_demo.py`
 
 ### 3.8 Operator dashboard and demo
 
@@ -219,9 +219,9 @@ Implemented:
 Primary evidence:
 
 - `fixtures/`
-- `backend/tests/test_golden_demo.py`
-- `backend/tests/test_ingestions.py`
-- `backend/tests/test_topics.py`
+- `backend/test_golden_demo.py`
+- `backend/test_ingestions.py`
+- `backend/test_topics.py`
 
 ## 4. Acceptance-criteria matrix
 
@@ -469,8 +469,8 @@ The completed remediation ran the project-prescribed and newly configured checks
 | `uv run alembic upgrade head` | Passed |
 | `uv run alembic check` | Passed; no new upgrade operations detected |
 | `uv run ruff check backend` | Passed |
-| `PYTHONPATH=backend uv run mypy backend/app` | Passed; 16 source files |
-| `PYTHONPATH=backend uv run pytest backend/tests -q` | Passed; 45 tests |
+| `PYTHONPATH=. uv run mypy backend` | Passed; 16 source files |
+| `PYTHONPATH=. uv run pytest backend -q` | Passed; 45 tests |
 | `npm run lint --prefix frontend` | Passed |
 | `npm run typecheck --prefix frontend` | Passed |
 | `npm test --prefix frontend` | Passed; 3 acceptance tests |

@@ -65,7 +65,7 @@ research is preserved, but it contains no extracted graph facts.
 docker compose up -d db
 uv run alembic upgrade head
 export GEMINI_API_KEY=... # required for live fact extraction
-PYTHONPATH=backend uv run uvicorn app.main:app --reload
+PYTHONPATH=. uv run uvicorn backend.main:app --reload
 npm run dev --prefix frontend
 ```
 
@@ -74,10 +74,10 @@ Register the topic in Layer 2 before posting a package for that topic to
 
 ## Verification completed
 
-- `PYTHONPATH=backend uv run pytest backend/tests -q` — 55 passed.
+- `PYTHONPATH=. uv run pytest backend -q` — 55 passed.
 - `npm test --prefix frontend` — 3 passed.
 - `npm run build --prefix frontend` — passed.
-- `uv run ruff check backend`, `PYTHONPATH=backend uv run mypy backend/app`, and
+- `uv run ruff check backend`, `PYTHONPATH=. uv run mypy backend`, and
   `uv run alembic check` — passed.
 - Runtime audit verified live article extraction, deduplication, package creation,
   Layer 2 ingestion, timeline/context/entity retrieval, raw export, and CORS.

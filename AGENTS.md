@@ -24,8 +24,8 @@
 ## Verification
 - Start PostgreSQL: `docker compose up -d db`.
 - Apply database migrations: `uv run alembic upgrade head`.
-- Run backend tests: `PYTHONPATH=backend:. uv run pytest backend/tests -q`.
-- Run the local API: `PYTHONPATH=backend uv run uvicorn app.main:app --reload`.
+- Run backend tests: `PYTHONPATH=. uv run pytest backend -q`.
+- Run the local API: `PYTHONPATH=. uv run uvicorn backend.main:app --reload`.
 - Run the operator dashboard: `npm run dev --prefix frontend`.
 - Build the operator dashboard: `npm run build --prefix frontend`.
 - Check Layer 3: `uv run ruff check <service dirs>` and `PYTHONPATH=. uv run mypy <service dirs>`.
@@ -34,10 +34,10 @@
 ## Layer 3 services
 - One `uv` environment covers every layer; there are no per-service requirements files.
 - Ports: Layer 2 API 8000, world builder 8001, blueprint assembler 8002, story generator 8003, translator 8004, audio generator 8005, orchestrator 8006.
-- Start one with `uv run uvicorn <service>.main:app --port <port>` from the **repository root**.
-- Artefact dirs resolve via `artifact_paths.py` under the repo root (`world_bible/`, `blueprints/`, `episodes/`, `audio/`, `runs/`).
+- Start one with `uv run uvicorn backend.layer3.<service>.main:app --port <port>` from the **repository root**.
+- Artefact dirs resolve via `backend/shared/artifact_paths.py` under the repo root (`world_bible/`, `blueprints/`, `episodes/`, `audio/`, `runs/`).
 - Only the world builder and blueprint assembler call Layer 2; the rest chain through files.
-- `prds/fixture-topic-context.json` is the agreed shape of `GET /topics/{id}/context`. `backend/tests/test_layer3_contract.py` enforces it; change both together.
+- `docs/prds/fixture-topic-context.json` is the agreed shape of `GET /topics/{id}/context`. `backend/layer3/tests/test_layer3_contract.py` enforces it; change both together.
 - Multi-character demo packages: `fixtures/demo/` (do not replace the UK golden under `fixtures/`).
 
 ## Session Docs

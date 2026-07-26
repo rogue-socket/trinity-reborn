@@ -15,7 +15,7 @@
 6. **Blueprints no longer ship real event titles** (e.g. “UK general election results”). Labels are built from fictional cast + event type.
 7. **New demo corpus** under `fixtures/demo/` — India student protests / exam-leak story with a full cast (students, police, ministry, opposition, press + city). The old UK golden fixtures are unchanged for regression tests.
 
-**Checks:** `PYTHONPATH=backend uv run pytest backend/tests -q` → **78 passed**.
+**Checks:** `PYTHONPATH=. uv run pytest backend -q` → **78 passed**.
 
 ---
 
@@ -36,7 +36,7 @@
 |----------|-----|--------|
 | Done | Orchestrator `DEMO_MODE` + explicit downstream timeouts | Shipped |
 | Done | Paginate `GET /topics` (+ `X-Total-Count`, dashboard `limit=50`) | Shipped |
-| Done | Pin Layer 3 artefact dirs to repo root (`artifact_paths.py`) | Shipped |
+| Done | Pin Layer 3 artefact dirs to repo root (`backend/shared/artifact_paths.py`) | Shipped |
 | Done | Scrub demo claim prose (`Parliament` / entrance-test wording) | Shipped |
 | Should | Same candidate-limit bug for events/claims | Open — fine for demo size |
 | Should | Ingestion locking under concurrency | Open — only if parallel ingest |

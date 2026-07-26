@@ -33,7 +33,7 @@ uv sync --group dev
 uv run alembic upgrade head
 
 # Layer 2 API
-PYTHONPATH=backend uv run uvicorn app.main:app --reload --port 8000
+PYTHONPATH=. uv run uvicorn backend.main:app --reload --port 8000
 
 # Operator dashboard
 npm install --prefix frontend
@@ -47,12 +47,12 @@ OpenAPI: `http://localhost:8000/docs`.
 From the repo root:
 
 ```sh
-uv run uvicorn world_builder_service.main:app --port 8001
-uv run uvicorn blueprint_assembler_service.main:app --port 8002
-uv run uvicorn story_generator_service.main:app --port 8003
-uv run uvicorn translator_service.main:app --port 8004
-uv run uvicorn audio_generator_service.main:app --port 8005
-uv run uvicorn orchestrator_service.main:app --port 8006
+uv run uvicorn backend.layer3.world_builder_service.main:app --port 8001
+uv run uvicorn backend.layer3.blueprint_assembler_service.main:app --port 8002
+uv run uvicorn backend.layer3.story_generator_service.main:app --port 8003
+uv run uvicorn backend.layer3.translator_service.main:app --port 8004
+uv run uvicorn backend.layer3.audio_generator_service.main:app --port 8005
+uv run uvicorn backend.layer3.orchestrator_service.main:app --port 8006
 ```
 
 Then `POST http://localhost:8006/run-topic` with `{"topic_id": "<uuid>"}` (add `"narrate": true` if not using `DEMO_MODE`).
@@ -74,7 +74,7 @@ Rich India student-protest packages live under [`fixtures/demo/`](fixtures/demo/
 # Register topic + ingest the three deltas in order against a running Layer 2 API,
 # then run world builder → blueprint → orchestrator on the returned topic_id.
 # Offline proof without API keys:
-PYTHONPATH=backend:. uv run pytest backend/tests/test_layer3_pipeline.py -k demo -q
+PYTHONPATH=. uv run pytest backend/layer3/tests/test_layer3_pipeline.py -k demo -q
 ```
 
 ## Layer 1 → Layer 2 handoff
@@ -98,14 +98,9 @@ Details: [`docs/layer1-layer2-integration.md`](docs/layer1-layer2-integration.md
 ```sh
 uv run alembic upgrade head
 uv run alembic check
-uv run ruff check backend artifact_paths.py \
-  orchestrator_service world_builder_service blueprint_assembler_service \
-  story_generator_service translator_service audio_generator_service
-PYTHONPATH=backend:. uv run mypy backend/app artifact_paths.py
-PYTHONPATH=. uv run mypy \
-  orchestrator_service world_builder_service blueprint_assembler_service \
-  story_generator_service translator_service audio_generator_service
-PYTHONPATH=backend:. uv run pytest backend/tests -q
+uv run ruff check backend
+PYTHONPATH=. uv run mypy backend
+PYTHONPATH=. uv run pytest backend -q
 npm run lint --prefix frontend
 npm run typecheck --prefix frontend
 npm test --prefix frontend

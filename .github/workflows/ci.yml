@@ -10,8 +10,9 @@ permissions:
 env:
   DATABASE_URL: postgresql+psycopg://trinity:trinity@localhost:5432/trinity_reborn
   LAYER3_SERVICES: >-
-    artifact_paths.py orchestrator_service world_builder_service blueprint_assembler_service
-    story_generator_service translator_service audio_generator_service
+    backend/shared/artifact_paths.py backend/layer3/orchestrator_service
+    backend/layer3/world_builder_service backend/layer3/blueprint_assembler_service
+    backend/layer3/story_generator_service backend/layer3/translator_service backend/layer3/audio_generator_service
 
 jobs:
   verify:
@@ -60,9 +61,9 @@ jobs:
 
       - name: Verify backend
         run: |
-          uv run ruff check backend artifact_paths.py
-          PYTHONPATH=backend:. uv run mypy backend/app artifact_paths.py
-          PYTHONPATH=backend:. uv run pytest backend/tests -q
+          uv run ruff check backend
+          PYTHONPATH=. uv run mypy backend
+          PYTHONPATH=. uv run pytest backend -q
 
       - name: Verify Layer 3 services
         run: |
