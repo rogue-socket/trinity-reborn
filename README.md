@@ -1,14 +1,15 @@
-# Trinity Reborn
+# Echoes
 
-Trinity Reborn turns a current-affairs research package into a fictional story
+Echoes turns a current-affairs research package into a fictional story
 world, character-led English episodes, and translations. Layers 1 and 2 retain
 evidence, provenance, and disagreements. Layer 3 uses that topic context to
 create fictional output.
 
 The standard local setup is a single Docker Compose command. It starts the
-database, applies migrations, brings up the API and text-generation services,
-and serves the dashboard. Audio is optional and disabled by default to avoid
-ElevenLabs quota use.
+database, applies migrations, brings up every service, and serves the dashboard.
+After a text run completes, the dashboard offers on-demand narration in English,
+Hindi, Tamil, Bengali, Punjabi, and Gujarati, with a native audio player for
+each generated character.
 
 ## Services
 
@@ -20,7 +21,7 @@ ElevenLabs quota use.
 | Blueprint assembler | Assemble the deterministic story blueprint | http://localhost:8002 |
 | Story generator | Generate one English episode per character | http://localhost:8003 |
 | Translator | Translate episodes with Gemini | http://localhost:8004 |
-| Audio generator | Narrate episodes with ElevenLabs; optional profile | http://localhost:8005 |
+| Audio generator | Narrate episodes with ElevenLabs | http://localhost:8005 |
 | Orchestrator | Call Layer 3 services in order and save a run report | http://localhost:8006 |
 | Dashboard | Browser UI | http://localhost:5173 |
 
@@ -29,6 +30,7 @@ ElevenLabs quota use.
 - Docker Desktop, running
 - An OpenAI API key for world and story generation
 - A Gemini API key for translations
+- An ElevenLabs API key for on-demand narration
 
 Python, uv, Node.js, and npm are only required for development commands and
 local test runs; Docker Compose provides the normal demo runtime.
@@ -47,6 +49,7 @@ Set these values in .env:
 ~~~dotenv
 OPENAI_API_KEY=...
 GEMINI_API_KEY=...
+ELEVENLABS_API_KEY=...
 ~~~
 
 These local defaults already match the Compose stack:
@@ -88,7 +91,7 @@ That one command:
 
 1. starts PostgreSQL on port 5432;
 2. runs Alembic migrations;
-3. starts Layer 2 and all text-pipeline services;
+3. starts Layer 2 and every Layer 3 service, including audio;
 4. starts the orchestrator; and
 5. starts the dashboard on port 5173.
 
@@ -128,9 +131,8 @@ Invoke-RestMethod http://localhost:8000/health
 Invoke-RestMethod http://localhost:8006/health
 ~~~
 
-The orchestrator health response includes every downstream service. Audio will
-report unreachable in the standard text-only stack; that is expected and does
-not prevent a run.
+The orchestrator health response includes every downstream service, including
+the audio generator.
 
 ## What the dashboard run does
 
@@ -156,28 +158,24 @@ POST /deduplicate, and POST /build-package.
 | runs/<topic_id>/<run_id>.json | Orchestrator run report |
 | audio/<topic_id>/<character_id>/ | Voice profile and MP3s; narrated runs only |
 
-## Optional narration
+## Narration and playback
 
-Add ELEVENLABS_API_KEY and OPENAI_API_KEY to .env, then include the audio
-profile when starting Compose:
+The dashboard leaves the initial pipeline text-only. Once it completes, its
+**Optional narration** section lists every generated character. Click
+one of the **EN**, **HI**, **TA**, **BN**, **PA**, or **GU** language chips,
+then generate narration for the perspective you want to hear. The UI sends
+only that character and language to the audio generator, then replaces the
+button with a native play/pause control.
 
-~~~powershell
-docker compose --profile audio up --build
-~~~
-
-The audio generator validates the ElevenLabs key before it starts. Confirm it
-before submitting a narrated run:
+The audio generator validates the ElevenLabs key at startup. Confirm it before
+submitting a narration request:
 
 ~~~powershell
 Invoke-RestMethod http://localhost:8005/health
 ~~~
 
-Run narration directly with a limited character and language set to conserve
-quota:
-
-~~~powershell
-Invoke-RestMethod http://localhost:8006/run-topic -Method Post -ContentType 'application/json' -Body '{"topic_id":"<topic-uuid>","character_ids":["<character-uuid>"],"languages":["en","hi"],"narrate":true}'
-~~~
+You can still call the orchestrator directly with narrate: true when you want
+to narrate a selected character/language set outside the dashboard.
 
 ## Architecture diagram and API docs
 
@@ -226,7 +224,7 @@ npm test --prefix frontend
 npm run build --prefix frontend
 ~~~
 
-The current suite contains 88 backend tests and 3 frontend tests.
+The current suite contains 90 backend tests and 7 frontend tests.
 
 ## Troubleshooting
 
@@ -235,7 +233,7 @@ The current suite contains 88 backend tests and 3 frontend tests.
 | Dashboard is blank | Restart Compose, then hard-refresh the browser. |
 | Dashboard reports Failed to fetch | Run docker compose ps and docker compose logs -f. Layer 2 and the orchestrator must be healthy. |
 | Run board shows NEEDS ATTENTION | Read docker compose logs -f <service>. OpenAI and Gemini keys must be in .env before the stack starts. |
-| Orchestrator reports audio unreachable | Expected unless you start with --profile audio. |
+| Audio generation fails | Check ELEVENLABS_API_KEY and OPENAI_API_KEY, then run docker compose logs -f audio_generator. |
 | Docker cannot bind port 5432 | Stop the unrelated process/container using port 5432, then start Compose again. |
 
 Do not commit .env or generated data under world_bible/, blueprints/, episodes/,

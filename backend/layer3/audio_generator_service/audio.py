@@ -34,8 +34,8 @@ class AudioError(Exception):
         super().__init__(message)
 
 
-def _elevenlabs_headers() -> dict[str, str]:
-    key = os.getenv("ELEVENLABS_API_KEY")
+def _elevenlabs_headers(api_key: str | None = None) -> dict[str, str]:
+    key = api_key or os.getenv("ELEVENLABS_API_KEY")
     if not key:
         raise AudioError(status.HTTP_503_SERVICE_UNAVAILABLE, "elevenlabs_not_configured", "ELEVENLABS_API_KEY is required")
     return {"xi-api-key": key}
@@ -210,13 +210,13 @@ def load_or_create_voice_profile(topic_id: str, character_id: str) -> VoiceProfi
     return profile
 
 
-def synthesize(language: str, text: str, voice_id: str) -> bytes:
+def synthesize(language: str, text: str, voice_id: str, *, api_key: str | None = None) -> bytes:
     payload = {"text": text, "model_id": "eleven_multilingual_v2"}
     for attempt in range(4):
         try:
             response = httpx.post(
                 f"{ELEVENLABS_BASE_URL}/v1/text-to-speech/{voice_id}",
-                headers={**_elevenlabs_headers(), "Content-Type": "application/json", "Accept": "audio/mpeg"},
+                headers={**_elevenlabs_headers(api_key), "Content-Type": "application/json", "Accept": "audio/mpeg"},
                 params={"output_format": "mp3_44100_128"},
                 json=payload,
                 timeout=90.0,
@@ -225,6 +225,12 @@ def synthesize(language: str, text: str, voice_id: str) -> bytes:
             raise AudioError(status.HTTP_502_BAD_GATEWAY, "elevenlabs_tts_failed", f"ElevenLabs request failed for {language}: {exc}") from exc
         if response.is_success:
             return response.content
+        if response.status_code == 402:
+            raise AudioError(
+                status.HTTP_502_BAD_GATEWAY,
+                "elevenlabs_quota_exhausted",
+                "ElevenLabs character quota is exhausted. Add credits or use a key with available characters.",
+            )
         if response.status_code == 429 or response.status_code >= 500:
             if attempt < 3:
                 time.sleep(2**attempt)

@@ -156,6 +156,7 @@ services:
     environment:
       VITE_API_PROXY_TARGET: http://api:8000
       VITE_ORCHESTRATOR_PROXY_TARGET: http://orchestrator:8006
+      VITE_AUDIO_PROXY_TARGET: http://audio_generator:8005
     depends_on:
       api:
         condition: service_healthy
@@ -165,7 +166,6 @@ services:
       - "5173:5173"
 
   audio_generator:
-    profiles: ["audio"]
     build:
       context: .
       dockerfile: Dockerfile
@@ -182,4 +182,3 @@ services:
     ports:
       - "8005:8005"
     command: ["uv", "run", "--no-sync", "uvicorn", "backend.layer3.audio_generator_service.main:app", "--host", "0.0.0.0", "--port", "8005"]
-
