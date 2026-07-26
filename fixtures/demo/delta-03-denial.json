@@ -1,0 +1,66 @@
+{
+  "schema_version": "1.0",
+  "package_id": "aaaaaaaa-0003-4a10-9c11-000000000003",
+  "topic_key": "india-student-protests-2026",
+  "metadata": {
+    "title": "Official denial",
+    "generated_at": "2026-03-11T09:00:00Z"
+  },
+  "sources": [
+    {
+      "source_id": "src-d3"
+    }
+  ],
+  "articles": [
+    {
+      "article_id": "art-d3",
+      "source_id": "src-d3",
+      "content": "The education ministry denies any leak occurred. No exam paper leaked before the entrance examination, a ministry spokesperson said, rejecting the students' account."
+    }
+  ],
+  "evidence": [
+    {
+      "evidence_id": "ev-d3-denial",
+      "article_id": "art-d3",
+      "excerpt": "The education ministry denies any leak occurred",
+      "start_offset": 0,
+      "end_offset": 47
+    },
+    {
+      "evidence_id": "ev-d3-noleak",
+      "article_id": "art-d3",
+      "excerpt": "No exam paper leaked before the entrance examination",
+      "start_offset": 49,
+      "end_offset": 101
+    }
+  ],
+  "entities": [
+    {
+      "entity_id": "ent-d3-ministry",
+      "type": "government_body",
+      "name": "Education ministry"
+    }
+  ],
+  "events": [],
+  "claims": [
+    {
+      "claim_id": "clm-d3-denial",
+      "text": "No exam paper leaked before the entrance examination.",
+      "subject_ref": "ent-d3-ministry",
+      "predicate_candidate": "exam_leak_occurred",
+      "object_ref_or_value": "false",
+      "temporal_scope": {
+        "start": "2026-03-01",
+        "precision": "day",
+        "basis": "reported"
+      },
+      "asserted_by_entity_id": "ent-d3-ministry",
+      "epistemic_status": "disputed",
+      "evidence_ids": [
+        "ev-d3-denial",
+        "ev-d3-noleak"
+      ]
+    }
+  ],
+  "relationships": []
+}

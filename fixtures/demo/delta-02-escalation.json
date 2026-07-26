@@ -1,0 +1,245 @@
+{
+  "schema_version": "1.0",
+  "package_id": "aaaaaaaa-0002-4a10-9c11-000000000002",
+  "topic_key": "india-student-protests-2026",
+  "metadata": {
+    "title": "Escalation and corroboration",
+    "generated_at": "2026-03-10T20:00:00Z"
+  },
+  "sources": [
+    {
+      "source_id": "src-d2"
+    }
+  ],
+  "articles": [
+    {
+      "article_id": "art-d2",
+      "source_id": "src-d2",
+      "content": "Thousands of students participated in the march toward the assembly, organisers said. Police used tear gas and baton charges to stop the march near the gates. The opposition coalition has called for the education minister's resignation. Student unions demanded a re-test overseen by an independent examiner. An exam paper leaked before the entrance examination, a second university confirmed."
+    }
+  ],
+  "evidence": [
+    {
+      "evidence_id": "ev-d2-turnout",
+      "article_id": "art-d2",
+      "excerpt": "Thousands of students participated in the march toward the assembly",
+      "start_offset": 0,
+      "end_offset": 67
+    },
+    {
+      "evidence_id": "ev-d2-police",
+      "article_id": "art-d2",
+      "excerpt": "Police used tear gas and baton charges to stop the march",
+      "start_offset": 86,
+      "end_offset": 142
+    },
+    {
+      "evidence_id": "ev-d2-resign",
+      "article_id": "art-d2",
+      "excerpt": "The opposition coalition has called for the education minister's resignation",
+      "start_offset": 159,
+      "end_offset": 235
+    },
+    {
+      "evidence_id": "ev-d2-retest",
+      "article_id": "art-d2",
+      "excerpt": "Student unions demanded a re-test overseen by an independent examiner",
+      "start_offset": 237,
+      "end_offset": 306
+    },
+    {
+      "evidence_id": "ev-d2-leak",
+      "article_id": "art-d2",
+      "excerpt": "An exam paper leaked before the entrance examination",
+      "start_offset": 308,
+      "end_offset": 360
+    }
+  ],
+  "entities": [
+    {
+      "entity_id": "ent-d2-students",
+      "type": "community_group",
+      "name": "Student demonstrators"
+    },
+    {
+      "entity_id": "ent-d2-police",
+      "type": "government_agency",
+      "name": "City police"
+    },
+    {
+      "entity_id": "ent-d2-ministry",
+      "type": "government_body",
+      "name": "Education ministry"
+    },
+    {
+      "entity_id": "ent-d2-opposition",
+      "type": "political_party",
+      "name": "Opposition coalition"
+    },
+    {
+      "entity_id": "ent-d2-press",
+      "type": "media_outlet",
+      "name": "Independent news desk"
+    },
+    {
+      "entity_id": "ent-d2-city",
+      "type": "city_or_locality",
+      "name": "Capital city"
+    }
+  ],
+  "events": [
+    {
+      "event_id": "evt-d2-march",
+      "type": "public_demonstration",
+      "title": "March toward the assembly met by police",
+      "temporal": {
+        "start": "2026-03-10T11:00:00Z",
+        "precision": "day",
+        "basis": "reported"
+      },
+      "participant_entity_ids": [
+        "ent-d2-students",
+        "ent-d2-police"
+      ],
+      "location_entity_ids": [
+        "ent-d2-city"
+      ],
+      "evidence_ids": [
+        "ev-d2-turnout",
+        "ev-d2-police"
+      ]
+    }
+  ],
+  "claims": [
+    {
+      "claim_id": "clm-d2-turnout",
+      "text": "Thousands of students participated in the march toward the assembly.",
+      "event_id": "evt-d2-march",
+      "subject_ref": "ent-d2-students",
+      "predicate_candidate": "march_participation",
+      "object_ref_or_value": "thousands",
+      "temporal_scope": {
+        "start": "2026-03-10",
+        "precision": "day",
+        "basis": "reported"
+      },
+      "epistemic_status": "corroborated",
+      "evidence_ids": [
+        "ev-d2-turnout"
+      ]
+    },
+    {
+      "claim_id": "clm-d2-police",
+      "text": "Police used tear gas and baton charges to stop the march.",
+      "event_id": "evt-d2-march",
+      "subject_ref": "ent-d2-police",
+      "predicate_candidate": "crowd_control_used",
+      "object_ref_or_value": "tear gas and baton charges",
+      "temporal_scope": {
+        "start": "2026-03-10",
+        "precision": "day",
+        "basis": "reported"
+      },
+      "epistemic_status": "reported",
+      "evidence_ids": [
+        "ev-d2-police"
+      ]
+    },
+    {
+      "claim_id": "clm-d2-resign",
+      "text": "The opposition coalition has called for the education minister's resignation.",
+      "subject_ref": "ent-d2-opposition",
+      "predicate_candidate": "demanded_resignation",
+      "object_ref_or_value": "education minister",
+      "temporal_scope": {
+        "start": "2026-03-10",
+        "precision": "day",
+        "basis": "reported"
+      },
+      "epistemic_status": "reported",
+      "evidence_ids": [
+        "ev-d2-resign"
+      ]
+    },
+    {
+      "claim_id": "clm-d2-retest",
+      "text": "Student unions demanded a re-test overseen by an independent examiner.",
+      "subject_ref": "ent-d2-students",
+      "predicate_candidate": "demanded_retest",
+      "object_ref_or_value": "independent re-test",
+      "temporal_scope": {
+        "start": "2026-03-10",
+        "precision": "day",
+        "basis": "reported"
+      },
+      "epistemic_status": "reported",
+      "evidence_ids": [
+        "ev-d2-retest"
+      ]
+    },
+    {
+      "claim_id": "clm-d2-leak",
+      "text": "An exam paper leaked before the entrance examination.",
+      "subject_ref": "ent-d2-ministry",
+      "predicate_candidate": "exam_leak_occurred",
+      "object_ref_or_value": "true",
+      "temporal_scope": {
+        "start": "2026-03-01",
+        "precision": "day",
+        "basis": "reported"
+      },
+      "asserted_by_entity_id": "ent-d2-students",
+      "epistemic_status": "corroborated",
+      "evidence_ids": [
+        "ev-d2-leak"
+      ]
+    }
+  ],
+  "relationships": [
+    {
+      "relationship_id": "rel-d2-students",
+      "subject_ref": "ent-d2-students",
+      "object_ref": "evt-d2-march",
+      "source_relation_label": "participated in",
+      "evidence_ids": [
+        "ev-d2-turnout"
+      ]
+    },
+    {
+      "relationship_id": "rel-d2-police",
+      "subject_ref": "ent-d2-police",
+      "object_ref": "evt-d2-march",
+      "source_relation_label": "participated in",
+      "evidence_ids": [
+        "ev-d2-police"
+      ]
+    },
+    {
+      "relationship_id": "rel-d2-located",
+      "subject_ref": "evt-d2-march",
+      "object_ref": "ent-d2-city",
+      "source_relation_label": "located at",
+      "evidence_ids": [
+        "ev-d2-turnout"
+      ]
+    },
+    {
+      "relationship_id": "rel-d2-opposition",
+      "subject_ref": "ent-d2-opposition",
+      "object_ref": "evt-d2-march",
+      "source_relation_label": "responded to",
+      "evidence_ids": [
+        "ev-d2-resign"
+      ]
+    },
+    {
+      "relationship_id": "rel-d2-press",
+      "subject_ref": "ent-d2-press",
+      "object_ref": "evt-d2-march",
+      "source_relation_label": "related to",
+      "evidence_ids": [
+        "ev-d2-turnout"
+      ]
+    }
+  ]
+}

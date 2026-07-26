@@ -1,0 +1,44 @@
+[project]
+name = "trinity-reborn-layer2"
+version = "0.1.0"
+description = "Layers 1–3 current-affairs knowledge graph and storytelling MVP"
+requires-python = ">=3.14"
+dependencies = [
+    "alembic>=1.14,<2",
+    "feedparser>=6.0,<7",
+    "fastapi>=0.115,<1",
+    "googlenewsdecoder>=0.1.7,<1",
+    "google-genai>=1.0,<2",
+    "httpx>=0.27,<1",
+    "newspaper4k>=0.9,<1",
+    "openai>=2.0,<3",
+    "psycopg[binary]>=3.2,<4",
+    "pydantic>=2.9,<3",
+    "python-dotenv>=1.0,<2",
+    "rapidfuzz>=3.14,<4",
+    "sqlalchemy>=2.0,<3",
+    "trafilatura>=2.0,<3",
+    "uvicorn[standard]>=0.30,<1",
+]
+
+[dependency-groups]
+dev = [
+    "httpx2>=2.9.1",
+    "mypy>=2.3.0",
+    "pytest>=8,<9",
+    "ruff>=0.16.0",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["backend"]
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F"]
+
+[tool.mypy]
+python_version = "3.14"
+check_untyped_defs = true
+ignore_missing_imports = true
+warn_unused_ignores = true
+allow_redefinition = true
+exclude = '(^|/)(tests|migrations)/'
