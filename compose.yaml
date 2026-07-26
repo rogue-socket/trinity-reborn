@@ -13,3 +13,173 @@ services:
       timeout: 3s
       retries: 15
 
+  migrate:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      DATABASE_URL: postgresql+psycopg://trinity:trinity@db:5432/trinity_reborn
+    depends_on:
+      db:
+        condition: service_healthy
+    command: ["uv", "run", "--no-sync", "alembic", "upgrade", "head"]
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      DATABASE_URL: postgresql+psycopg://trinity:trinity@db:5432/trinity_reborn
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    ports:
+      - "8000:8000"
+    command: ["uv", "run", "--no-sync", "uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", "8000"]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  world_builder:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    env_file: .env
+    environment:
+      LAYER2_BASE_URL: http://api:8000
+    depends_on:
+      api:
+        condition: service_healthy
+    volumes:
+      - ./world_bible:/app/world_bible
+      - ./blueprints:/app/blueprints
+      - ./episodes:/app/episodes
+      - ./audio:/app/audio
+      - ./runs:/app/runs
+    ports:
+      - "8001:8001"
+    command: ["uv", "run", "--no-sync", "uvicorn", "backend.layer3.world_builder_service.main:app", "--host", "0.0.0.0", "--port", "8001"]
+
+  blueprint_assembler:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    env_file: .env
+    environment:
+      LAYER2_BASE_URL: http://api:8000
+    depends_on:
+      api:
+        condition: service_healthy
+    volumes:
+      - ./world_bible:/app/world_bible
+      - ./blueprints:/app/blueprints
+      - ./episodes:/app/episodes
+      - ./audio:/app/audio
+      - ./runs:/app/runs
+    ports:
+      - "8002:8002"
+    command: ["uv", "run", "--no-sync", "uvicorn", "backend.layer3.blueprint_assembler_service.main:app", "--host", "0.0.0.0", "--port", "8002"]
+
+  story_generator:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    env_file: .env
+    depends_on:
+      api:
+        condition: service_healthy
+    volumes:
+      - ./world_bible:/app/world_bible
+      - ./blueprints:/app/blueprints
+      - ./episodes:/app/episodes
+      - ./audio:/app/audio
+      - ./runs:/app/runs
+    ports:
+      - "8003:8003"
+    command: ["uv", "run", "--no-sync", "uvicorn", "backend.layer3.story_generator_service.main:app", "--host", "0.0.0.0", "--port", "8003"]
+
+  translator:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    env_file: .env
+    depends_on:
+      api:
+        condition: service_healthy
+    volumes:
+      - ./world_bible:/app/world_bible
+      - ./blueprints:/app/blueprints
+      - ./episodes:/app/episodes
+      - ./audio:/app/audio
+      - ./runs:/app/runs
+    ports:
+      - "8004:8004"
+    command: ["uv", "run", "--no-sync", "uvicorn", "backend.layer3.translator_service.main:app", "--host", "0.0.0.0", "--port", "8004"]
+
+  orchestrator:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    env_file: .env
+    environment:
+      LAYER2_BASE_URL: http://api:8000
+      WORLD_BUILDER_URL: http://world_builder:8001
+      BLUEPRINT_URL: http://blueprint_assembler:8002
+      STORY_GEN_URL: http://story_generator:8003
+      TRANSLATOR_URL: http://translator:8004
+      AUDIO_URL: http://audio_generator:8005
+    depends_on:
+      world_builder:
+        condition: service_started
+      blueprint_assembler:
+        condition: service_started
+      story_generator:
+        condition: service_started
+      translator:
+        condition: service_started
+    volumes:
+      - ./world_bible:/app/world_bible
+      - ./blueprints:/app/blueprints
+      - ./episodes:/app/episodes
+      - ./audio:/app/audio
+      - ./runs:/app/runs
+    ports:
+      - "8006:8006"
+    command: ["uv", "run", "--no-sync", "uvicorn", "backend.layer3.orchestrator_service.main:app", "--host", "0.0.0.0", "--port", "8006"]
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    environment:
+      VITE_API_PROXY_TARGET: http://api:8000
+      VITE_ORCHESTRATOR_PROXY_TARGET: http://orchestrator:8006
+    depends_on:
+      api:
+        condition: service_healthy
+      orchestrator:
+        condition: service_started
+    ports:
+      - "5173:5173"
+
+  audio_generator:
+    profiles: ["audio"]
+    build:
+      context: .
+      dockerfile: Dockerfile
+    env_file: .env
+    depends_on:
+      api:
+        condition: service_healthy
+    volumes:
+      - ./world_bible:/app/world_bible
+      - ./blueprints:/app/blueprints
+      - ./episodes:/app/episodes
+      - ./audio:/app/audio
+      - ./runs:/app/runs
+    ports:
+      - "8005:8005"
+    command: ["uv", "run", "--no-sync", "uvicorn", "backend.layer3.audio_generator_service.main:app", "--host", "0.0.0.0", "--port", "8005"]
+

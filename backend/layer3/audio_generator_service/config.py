@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 from backend.shared.artifact_paths import artifact_dir
 
 
-load_dotenv(Path(__file__).resolve().parents[1] / ".env")
+load_dotenv(Path(__file__).resolve().parents[3] / ".env")
 
 BLUEPRINT_DIR = artifact_dir("BLUEPRINT_DIR", "blueprints")
 EPISODE_DIR = artifact_dir("EPISODE_DIR", "episodes")

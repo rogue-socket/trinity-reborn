@@ -1,0 +1,14 @@
+.git
+.github
+.venv
+.env
+__pycache__
+*.py[cod]
+frontend/node_modules
+frontend/dist
+world_bible
+blueprints
+episodes
+audio
+runs
+handoffs

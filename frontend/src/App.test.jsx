@@ -1,67 +1,41 @@
 // @vitest-environment jsdom
 import "@testing-library/jest-dom/vitest";
 import React from "react";
-import { render, screen } from "@testing-library/react";
-import { describe, expect, test, vi } from "vitest";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { afterEach, describe, expect, test, vi } from "vitest";
 
-import { GraphView, ResolutionDecisionList } from "./App";
-import { demoScenario } from "./demo";
+import App, { ArchitectureCanvas, PresetCard } from "./App";
+import { presets } from "./presets";
 
+afterEach(cleanup);
 
-describe("operator dashboard acceptance", () => {
-  test("replays the committed real-topic fixtures", () => {
-    expect(demoScenario.topic.topic_key).toBe("uk-general-election-2024");
-    expect(demoScenario.deltas.map((delta) => delta.package_id)).toEqual([
-      "11111111-1111-4111-8111-111111111111",
-      "22222222-2222-4222-8222-222222222222",
-      "33333333-3333-4333-8333-333333333333",
-    ]);
+describe("Trinity Reborn demo launchpad", () => {
+  test("presents the current-affairs preset topics", () => {
+    render(<App />);
+
+    expect(screen.getByRole("heading", { name: /turn a live signal/i })).toBeVisible();
+    expect(screen.getByRole("heading", { level: 3, name: "NEET leak protests" })).toBeVisible();
+    expect(screen.getByRole("heading", { level: 3, name: "FIFA World Cup corruption" })).toBeVisible();
+    expect(screen.getByRole("heading", { level: 3, name: "Europe forest fires" })).toBeVisible();
   });
 
-  test("renders connected possible matches with distinct graph styling", () => {
-    const { container } = render(
-      <GraphView
-        nodes={[
-          { entity_id: "entity-a", label: "Alpha", type: "organization", status: "active" },
-          { entity_id: "entity-b", label: "Beta", type: "organization", status: "active" },
-        ]}
-        relationships={[
-          {
-            relationship_id: "relationship-1",
-            subject: { type: "entity", id: "entity-a" },
-            object: { type: "entity", id: "entity-b" },
-            type: "POSSIBLY_SAME_AS",
-            status: "possible_match",
-          },
-        ]}
-        onInspect={vi.fn()}
-      />,
-    );
+  test("selects and launches a briefing card", () => {
+    const onSelect = vi.fn();
+    const onLaunch = vi.fn();
+    render(<PresetCard preset={presets[0]} selected={false} onSelect={onSelect} onLaunch={onLaunch} disabled={false} />);
 
-    expect(screen.getByRole("img", { name: "Connected canonical knowledge graph" })).toBeVisible();
-    expect(container.querySelector(".graph-edge.possible_match line")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /preview/i }));
+    fireEvent.click(screen.getByRole("button", { name: /launch/i }));
+
+    expect(onSelect).toHaveBeenCalledWith("neet-leak");
+    expect(onLaunch).toHaveBeenCalledWith(presets[0]);
   });
 
-  test("shows decision rationale, signals, and processing versions", () => {
-    render(
-      <ResolutionDecisionList
-        decisions={[
-          {
-            decision_id: "decision-1",
-            incoming_type: "entity",
-            incoming_id: "ent-1",
-            outcome: "RESOLVE_TO_EXISTING",
-            rationale: "Normalized alias matched.",
-            signals: { candidates: [{ score: 1 }] },
-            processing_version: "kg-pipeline-0.2",
-            ontology_version: "kg-ontology-0.2",
-          },
-        ]}
-      />,
-    );
+  test("shows the downloadable architecture view", () => {
+    render(<ArchitectureCanvas />);
 
-    expect(screen.getByText("Normalized alias matched.")).toBeVisible();
-    expect(screen.getByText(/kg-pipeline-0.2/)).toBeVisible();
-    expect(screen.getByText(/"score":1/)).toBeVisible();
+    expect(screen.getByRole("img", { name: /trinity reborn architecture/i })).toBeVisible();
+    expect(screen.getByText("World Bible")).toBeVisible();
+    expect(screen.getByText("Episodes")).toBeVisible();
   });
 });
